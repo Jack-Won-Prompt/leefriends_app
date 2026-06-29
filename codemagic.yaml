@@ -1,0 +1,68 @@
+# Codemagic CI/CD — LEEFRIENDS Flutter 앱
+# iOS: 클라우드 Mac 빌드 → App Store Connect(TestFlight) 자동 업로드
+# (Windows에서도 Mac 없이 빌드/제출 가능)
+#
+# 사전 설정(Codemagic UI):
+#  - Teams > Integrations > App Store Connect: API 키 등록 후 이름을 'CodemagicAppStoreKey'로
+#  - 앱 추가 시 이 저장소(GitHub 등) 연결
+#  - iOS 자동 코드서명: Apple Developer 계정 연결(또는 위 API 키로 자동)
+#  - 환경변수 그룹 'appstore'에 APP_STORE_APPLE_ID(App Store Connect 숫자 앱 ID) 추가
+#
+# 사전 설정(저장소):
+#  - ios/Runner/GoogleService-Info.plist 추가(푸시) — Firebase iOS 앱에서 다운로드
+#  - App ID(com.leefriends.leefriends)에 Push Notifications capability 활성화
+
+workflows:
+  ios-release:
+    name: iOS Release (App Store)
+    instance_type: mac_mini_m2
+    max_build_duration: 90
+    integrations:
+      app_store_connect: CodemagicAppStoreKey
+    environment:
+      ios_signing:
+        distribution_type: app_store
+        bundle_identifier: com.leefriends.leefriends
+      groups:
+        - appstore           # APP_STORE_APPLE_ID 등
+      flutter: stable
+      xcode: latest
+      cocoapods: default
+    scripts:
+      - name: Flutter 패키지 설치
+        script: flutter pub get
+      - name: CocoaPods 설치
+        script: |
+          find . -name "Podfile" -execdir pod install \;
+      - name: 코드서명 프로파일 적용
+        script: xcode-project use-profiles
+      - name: iOS IPA 빌드
+        script: |
+          flutter build ipa --release \
+            --build-name=1.0.0 \
+            --build-number=$(($(app-store-connect get-latest-testflight-build-number "$APP_STORE_APPLE_ID") + 1)) \
+            --export-options-plist=/Users/builder/export_options.plist
+    artifacts:
+      - build/ios/ipa/*.ipa
+      - /tmp/xcodebuild_logs/*.log
+    publishing:
+      app_store_connect:
+        auth: integration
+        submit_to_testflight: true
+        # 정식 스토어 심사까지 자동 제출하려면 아래 주석 해제
+        # submit_to_app_store: false
+
+  # (선택) 안드로이드도 클라우드에서 AAB 빌드하고 싶을 때
+  android-release:
+    name: Android Release (AAB)
+    instance_type: linux_x2
+    max_build_duration: 60
+    environment:
+      flutter: stable
+    scripts:
+      - name: Flutter 패키지 설치
+        script: flutter pub get
+      - name: AAB 빌드
+        script: flutter build appbundle --release
+    artifacts:
+      - build/app/outputs/bundle/release/*.aab

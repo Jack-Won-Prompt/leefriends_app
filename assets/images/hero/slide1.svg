@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1920" height="900" viewBox="0 0 1920 900">
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#FFF3C4"/>
+      <stop offset="0.5" stop-color="#FFD15C"/>
+      <stop offset="1" stop-color="#FF9F1C"/>
+    </linearGradient>
+  </defs>
+  <rect width="1920" height="900" fill="url(#g)"/>
+  <circle cx="1500" cy="220" r="380" fill="#ffffff" opacity="0.12"/>
+  <circle cx="300" cy="760" r="260" fill="#ffffff" opacity="0.10"/>
+  <circle cx="1660" cy="700" r="120" fill="#ffffff" opacity="0.14"/>
+  <text x="160" y="380" font-family="'Pretendard',sans-serif" font-size="30" font-weight="700" fill="#ffffff" opacity="0.9" letter-spacing="8">PREMIUM MANGO DESSERT</text>
+  <text x="160" y="490" font-family="'Pretendard',sans-serif" font-size="96" font-weight="900" fill="#ffffff">농익은 애플망고, 그대로</text>
+  <text x="160" y="560" font-family="'Pretendard',sans-serif" font-size="34" font-weight="500" fill="#ffffff" opacity="0.9">한 입에 퍼지는 진짜 망고의 계절</text>
+  <text x="1500" y="240" font-size="320" text-anchor="middle" dominant-baseline="central">🥭</text>
+</svg>

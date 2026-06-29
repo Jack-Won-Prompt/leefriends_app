@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(//e/xampp/htdocs/leefriends/**)",
+      "Bash(php artisan tinker '--execute= *)",
+      "Bash(flutter build *)"
+    ],
+    "additionalDirectories": [
+      "e:\\xampp\\htdocs\\leefriends\\routes"
+    ]
+  }
+}

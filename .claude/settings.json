@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(cd /e/xampp/htdocs/lee; echo \"=== app.css ===\"; cat resources/css/app.css 2>/dev/null | head -60; echo \"\"; echo \"=== color usages \\(hex\\) ===\"; grep -rohE \"#[0-9a-fA-F]{6}\" resources/ 2>/dev/null | sort | uniq -c | sort -rn | head -30)",
+      "Read(//e/xampp/htdocs/lee/**)"
+    ]
+  }
+}
