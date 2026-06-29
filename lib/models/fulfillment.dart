@@ -178,6 +178,12 @@ class SellerOrder {
   final int supplyAmount;
   final String? createdAt;
   final String? note;
+  final String? storeEmail;
+  final bool isSample;
+  final bool taxInvoiced;
+  final bool statementEmailed;
+  final int statementEmailCount;
+  final bool hasPendingPrice;
   final List<FulfillItem> items;
 
   const SellerOrder({
@@ -191,6 +197,12 @@ class SellerOrder {
     required this.supplyAmount,
     required this.createdAt,
     required this.note,
+    this.storeEmail,
+    this.isSample = false,
+    this.taxInvoiced = false,
+    this.statementEmailed = false,
+    this.statementEmailCount = 0,
+    this.hasPendingPrice = false,
     required this.items,
   });
 
@@ -205,6 +217,12 @@ class SellerOrder {
         supplyAmount: _i(j['supply_amount']),
         createdAt: j['created_at'] as String?,
         note: j['note'] as String?,
+        storeEmail: j['store_email'] as String?,
+        isSample: j['is_sample'] as bool? ?? false,
+        taxInvoiced: j['tax_invoiced'] as bool? ?? false,
+        statementEmailed: j['statement_emailed'] as bool? ?? false,
+        statementEmailCount: _i(j['statement_email_count']),
+        hasPendingPrice: j['has_pending_price'] as bool? ?? false,
         items: (j['items'] as List? ?? [])
             .map((e) => FulfillItem.fromJson(e as Map<String, dynamic>))
             .toList(),

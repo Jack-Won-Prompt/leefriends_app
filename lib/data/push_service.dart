@@ -6,6 +6,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 
+import '../firebase_options.dart';
 import 'api_config.dart';
 import 'auth_controller.dart';
 
@@ -39,7 +40,7 @@ class PushService {
     _messengerKey = messengerKey;
 
     try {
-      await Firebase.initializeApp();
+      await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
       _available = true;
     } catch (e) {
       // Firebase 설정 파일 부재 등 → 푸시 비활성, 앱은 정상 동작

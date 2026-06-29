@@ -9,8 +9,9 @@ import '../../widgets/paged_list_view.dart';
 import 'seller_widgets.dart';
 
 class SellerOrdersScreen extends StatefulWidget {
-  const SellerOrdersScreen({super.key, required this.repository});
+  const SellerOrdersScreen({super.key, required this.repository, this.isHq = false});
   final SellerRepository repository;
+  final bool isHq;
 
   @override
   State<SellerOrdersScreen> createState() => _SellerOrdersScreenState();
@@ -48,7 +49,7 @@ class _SellerOrdersScreenState extends State<SellerOrdersScreen> {
                 order: order,
                 onTap: () => Navigator.of(context).push(MaterialPageRoute(
                   builder: (_) => SellerOrderDetailScreen(
-                      repository: widget.repository, id: order.id),
+                      repository: widget.repository, id: order.id, isHq: widget.isHq),
                 )),
               ),
             ),
@@ -104,9 +105,11 @@ class _Tile extends StatelessWidget {
 }
 
 class SellerOrderDetailScreen extends StatefulWidget {
-  const SellerOrderDetailScreen({super.key, required this.repository, required this.id});
+  const SellerOrderDetailScreen(
+      {super.key, required this.repository, required this.id, this.isHq = false});
   final SellerRepository repository;
   final int id;
+  final bool isHq;
 
   @override
   State<SellerOrderDetailScreen> createState() => _SellerOrderDetailScreenState();
@@ -194,11 +197,122 @@ class _SellerOrderDetailScreenState extends State<SellerOrderDetailScreen> {
                 child: Text('품목', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w800)),
               ),
               for (final it in o.items) _itemTile(o, it),
+              if (widget.isHq && !o.isSample) _hqActions(o),
             ],
           );
         },
       ),
     );
+  }
+
+  /// 본사 전용 — 세금계산서 발행 + 거래명세서 이메일.
+  Widget _hqActions(SellerOrder o) {
+    return Padding(
+      padding: const EdgeInsets.only(top: 16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          // 세금계산서 발행
+          if (o.taxInvoiced)
+            Container(
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: const Color(0xFFE7F6EC),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: const Row(children: [
+                Icon(Icons.check_circle, color: Color(0xFF1E8E4E), size: 18),
+                SizedBox(width: 8),
+                Text('세금계산서 발행 완료',
+                    style: TextStyle(
+                        color: Color(0xFF1E8E4E), fontWeight: FontWeight.w800, fontSize: 13)),
+              ]),
+            )
+          else
+            FilledButton.icon(
+              onPressed: _busy || o.hasPendingPrice ? null : () => _issueTaxInvoice(o),
+              style: FilledButton.styleFrom(minimumSize: const Size.fromHeight(50)),
+              icon: const Icon(Icons.receipt_long, size: 18),
+              label: Text(o.hasPendingPrice ? '싯가 단가 확정 후 발행 가능' : '세금계산서 발행 (본사 → 매장)'),
+            ),
+          const SizedBox(height: 10),
+          // 거래명세서 이메일
+          OutlinedButton.icon(
+            onPressed: _busy || o.storeEmail == null ? null : () => _emailStatement(o),
+            style: OutlinedButton.styleFrom(
+              foregroundColor: AppColors.accent,
+              side: const BorderSide(color: AppColors.mango300),
+              minimumSize: const Size.fromHeight(50),
+            ),
+            icon: const Icon(Icons.mail_outline, size: 18),
+            label: Text(o.storeEmail == null
+                ? '매장 이메일 없음'
+                : (o.statementEmailed ? '거래명세서 재전송' : '거래명세서 이메일 보내기')),
+          ),
+          if (o.statementEmailed)
+            Padding(
+              padding: const EdgeInsets.only(top: 6),
+              child: Text('✓ 매장 전송됨${o.statementEmailCount > 1 ? ' (${o.statementEmailCount}회)' : ''}',
+                  style: const TextStyle(fontSize: 12, color: Color(0xFF1E8E4E))),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _issueTaxInvoice(SellerOrder o) async {
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('세금계산서 발행'),
+        content: Text('${o.storeName ?? '매장'} 앞으로 세금계산서를 팝빌로 즉시 발행합니다.\n발행 후에는 취소만 가능합니다. 진행할까요?'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('닫기')),
+          FilledButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('발행')),
+        ],
+      ),
+    );
+    if (ok != true) return;
+    await _runAction(() => widget.repository.issueOrderTaxInvoice(o.id));
+  }
+
+  Future<void> _emailStatement(SellerOrder o) async {
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('거래명세서 이메일'),
+        content: Text('거래명세서 PDF를 매장(${o.storeEmail})으로 전송합니다. 진행할까요?'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('닫기')),
+          FilledButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('전송')),
+        ],
+      ),
+    );
+    if (ok != true) return;
+    await _runAction(() => widget.repository.emailOrderStatement(o.id));
+  }
+
+  Future<void> _runAction(Future<String> Function() action) async {
+    setState(() => _busy = true);
+    try {
+      final msg = await action();
+      setState(() { _future = widget.repository.orderDetail(widget.id); });
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text(msg),
+            behavior: SnackBarBehavior.floating,
+            backgroundColor: AppColors.mango800));
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text(e.toString().replaceFirst('OrderException: ', '')),
+            behavior: SnackBarBehavior.floating,
+            backgroundColor: const Color(0xFFB02A2A)));
+      }
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
   }
 
   Widget _itemTile(SellerOrder o, FulfillItem it) {

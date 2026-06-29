@@ -151,7 +151,8 @@ class _SellerHomeState extends State<SellerHome> {
             icon: Icons.inbox_outlined,
             title: '받은 발주',
             sub: '매장에서 들어온 발주 확인',
-            onTap: () => _go(SellerOrdersScreen(repository: widget.repository)),
+            onTap: () => _go(SellerOrdersScreen(
+                repository: widget.repository, isHq: widget.roleLabel == '본사')),
           ),
           _NavCard(
             icon: Icons.fact_check_outlined,

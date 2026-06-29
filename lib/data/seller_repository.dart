@@ -77,6 +77,18 @@ class SellerRepository {
     return body['message'] as String? ?? '단가를 확정했습니다.';
   }
 
+  // 이 발주로 세금계산서 발행 (본사 → 매장)
+  Future<String> issueOrderTaxInvoice(int orderId) async {
+    final body = await _post('/seller/orders/$orderId/tax-invoice', {}, expect: 201);
+    return body['message'] as String? ?? '세금계산서를 발행했습니다.';
+  }
+
+  // 발주 거래명세서 PDF를 매장 이메일로 전송 (본사)
+  Future<String> emailOrderStatement(int orderId) async {
+    final body = await _post('/seller/orders/$orderId/statement-email', {});
+    return body['message'] as String? ?? '거래명세서를 전송했습니다.';
+  }
+
   // 매장 주문 변경 확인(반영)
   Future<({List<OrderChangeItem> changes, int pending})> orderChanges() async {
     final body = await _get('/seller/order-changes');
