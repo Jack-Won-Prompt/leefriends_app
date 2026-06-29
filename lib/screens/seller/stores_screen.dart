@@ -44,7 +44,7 @@ class _StoresManageScreenState extends State<StoresManageScreen> {
         content: SingleChildScrollView(
           child: Column(mainAxisSize: MainAxisSize.min, children: [
             _f(name, '매장명'),
-            _f(email, '이메일', enabled: s == null),
+            _f(email, s == null ? '이메일' : '이메일 (세금계산서·거래명세서 수신)'),
             _f(region, '지역 (선택)'),
             _f(phone, '연락처 (선택)'),
             _f(address, '주소 (선택)'),
