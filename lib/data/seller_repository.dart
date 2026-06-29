@@ -89,6 +89,13 @@ class SellerRepository {
     return body['message'] as String? ?? '거래명세서를 전송했습니다.';
   }
 
+  // 택배비(박스·단가) 등록/수정 (본사)
+  Future<String> updateOrderShipping(int orderId, int boxCount, int unitPrice) async {
+    final body = await _patch('/seller/orders/$orderId/shipping',
+        {'shipping_box_count': boxCount, 'shipping_unit_price': unitPrice});
+    return body['message'] as String? ?? '택배비를 저장했습니다.';
+  }
+
   // 매장 주문 변경 확인(반영)
   Future<({List<OrderChangeItem> changes, int pending})> orderChanges() async {
     final body = await _get('/seller/order-changes');

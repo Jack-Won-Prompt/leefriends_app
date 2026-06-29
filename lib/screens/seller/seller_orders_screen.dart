@@ -173,19 +173,24 @@ class _SellerOrderDetailScreenState extends State<SellerOrderDetailScreen> {
                     ],
                     const SizedBox(height: 12),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                      padding: const EdgeInsets.all(14),
                       decoration: BoxDecoration(
                         color: AppColors.mango900,
                         borderRadius: BorderRadius.circular(12),
                       ),
-                      child: Row(children: [
-                        const Text('발주 합계',
-                            style: TextStyle(
-                                color: Colors.white70, fontSize: 13, fontWeight: FontWeight.w600)),
-                        const Spacer(),
-                        Text(won(o.storeAmount),
-                            style: const TextStyle(
-                                color: Colors.white, fontSize: 18, fontWeight: FontWeight.w800)),
+                      child: Column(children: [
+                        if (o.shippingFee > 0) ...[
+                          _totalRow('출고가 합계', won(o.storeAmount)),
+                          const SizedBox(height: 5),
+                          _totalRow(
+                              '택배비 (${o.shippingBoxCount}박스 × ${won(o.shippingUnitPrice)})',
+                              won(o.shippingFee)),
+                          const Padding(
+                            padding: EdgeInsets.symmetric(vertical: 8),
+                            child: Divider(color: Colors.white24, height: 1),
+                          ),
+                        ],
+                        _totalRow('발주 합계', won(o.orderTotal), big: true),
                       ]),
                     ),
                   ],
@@ -212,6 +217,20 @@ class _SellerOrderDetailScreenState extends State<SellerOrderDetailScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
+          // 택배비 등록/수정
+          OutlinedButton.icon(
+            onPressed: _busy ? null : () => _setShipping(o),
+            style: OutlinedButton.styleFrom(
+              foregroundColor: AppColors.mango700,
+              side: const BorderSide(color: AppColors.mango300),
+              minimumSize: const Size.fromHeight(50),
+            ),
+            icon: const Icon(Icons.local_shipping_outlined, size: 18),
+            label: Text(o.shippingFee > 0
+                ? '택배비 수정 (${won(o.shippingFee)})'
+                : '택배비 등록'),
+          ),
+          const SizedBox(height: 10),
           // 세금계산서 발행
           if (o.taxInvoiced)
             Container(
@@ -277,14 +296,36 @@ class _SellerOrderDetailScreenState extends State<SellerOrderDetailScreen> {
   }
 
   Future<void> _emailStatement(SellerOrder o) async {
+    final noShipping = o.shippingFee == 0;
     final ok = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text('거래명세서 이메일'),
-        content: Text('거래명세서 PDF를 매장(${o.storeEmail})으로 전송합니다. 진행할까요?'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if (noShipping)
+              Container(
+                margin: const EdgeInsets.only(bottom: 12),
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFFF3E6),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: const Text('⚠️ 택배비가 추가되지 않았습니다. 택배비 없이 전송됩니다.',
+                    style: TextStyle(
+                        fontSize: 13, color: Color(0xFFC2660C), fontWeight: FontWeight.w700)),
+              ),
+            Text('거래명세서 PDF를 매장(${o.storeEmail})으로 전송합니다. 진행할까요?'),
+          ],
+        ),
         actions: [
           TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('닫기')),
-          FilledButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('전송')),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: Text(noShipping ? '택배비 없이 전송' : '전송'),
+          ),
         ],
       ),
     );
@@ -314,6 +355,62 @@ class _SellerOrderDetailScreenState extends State<SellerOrderDetailScreen> {
       if (mounted) setState(() => _busy = false);
     }
   }
+
+  Future<void> _setShipping(SellerOrder o) async {
+    final boxCtrl =
+        TextEditingController(text: o.shippingBoxCount > 0 ? '${o.shippingBoxCount}' : '');
+    final unitCtrl =
+        TextEditingController(text: o.shippingUnitPrice > 0 ? '${o.shippingUnitPrice}' : '');
+    final saved = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('택배비 등록'),
+        content: Column(mainAxisSize: MainAxisSize.min, children: [
+          TextField(
+            controller: boxCtrl,
+            keyboardType: TextInputType.number,
+            decoration: const InputDecoration(labelText: '박스 수', border: OutlineInputBorder()),
+          ),
+          const SizedBox(height: 12),
+          TextField(
+            controller: unitCtrl,
+            keyboardType: TextInputType.number,
+            decoration:
+                const InputDecoration(labelText: '박스당 단가 (원)', border: OutlineInputBorder()),
+          ),
+          const SizedBox(height: 8),
+          const Text('0으로 저장하면 택배비가 제거됩니다.',
+              style: TextStyle(fontSize: 12, color: AppColors.inkSoft)),
+        ]),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('취소')),
+          FilledButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('저장')),
+        ],
+      ),
+    );
+    final box = int.tryParse(boxCtrl.text.trim()) ?? 0;
+    final unit = int.tryParse(unitCtrl.text.trim()) ?? 0;
+    boxCtrl.dispose();
+    unitCtrl.dispose();
+    if (saved != true) return;
+    await _runAction(() => widget.repository.updateOrderShipping(o.id, box, unit));
+  }
+
+  Widget _totalRow(String label, String value, {bool big = false}) => Row(children: [
+        Expanded(
+          child: Text(label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                  color: Colors.white70,
+                  fontSize: big ? 14 : 12,
+                  fontWeight: FontWeight.w600)),
+        ),
+        const SizedBox(width: 8),
+        Text(value,
+            style: TextStyle(
+                color: Colors.white, fontSize: big ? 18 : 13, fontWeight: FontWeight.w800)),
+      ]);
 
   Widget _itemTile(SellerOrder o, FulfillItem it) {
     final isHqItem = it.supplyType == 'hq';

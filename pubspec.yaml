@@ -1,8 +1,8 @@
-name: leefriends
-description: "LEEFRIENDS · 프리미엄 망고빙수 전문점 모바일 앱"
+﻿name: leefriends
+description: "LEEFRIENDS 쨌 ?꾨━誘몄뾼 留앷퀬鍮숈닔 ?꾨Ц??紐⑤컮????
 publish_to: 'none'
 
-version: 1.0.0+6
+version: 1.0.0+8
 
 environment:
   sdk: ^3.12.0

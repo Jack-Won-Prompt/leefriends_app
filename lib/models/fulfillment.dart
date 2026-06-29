@@ -184,6 +184,10 @@ class SellerOrder {
   final bool statementEmailed;
   final int statementEmailCount;
   final bool hasPendingPrice;
+  final int shippingBoxCount;
+  final int shippingUnitPrice;
+  final int shippingFee;
+  final int orderTotal;
   final List<FulfillItem> items;
 
   const SellerOrder({
@@ -203,8 +207,12 @@ class SellerOrder {
     this.statementEmailed = false,
     this.statementEmailCount = 0,
     this.hasPendingPrice = false,
+    this.shippingBoxCount = 0,
+    this.shippingUnitPrice = 0,
+    this.shippingFee = 0,
+    int? orderTotal,
     required this.items,
-  });
+  }) : orderTotal = orderTotal ?? storeAmount;
 
   factory SellerOrder.fromJson(Map<String, dynamic> j) => SellerOrder(
         id: j['id'] as int,
@@ -223,6 +231,10 @@ class SellerOrder {
         statementEmailed: j['statement_emailed'] as bool? ?? false,
         statementEmailCount: _i(j['statement_email_count']),
         hasPendingPrice: j['has_pending_price'] as bool? ?? false,
+        shippingBoxCount: _i(j['shipping_box_count']),
+        shippingUnitPrice: _i(j['shipping_unit_price']),
+        shippingFee: _i(j['shipping_fee']),
+        orderTotal: j['order_total'] != null ? _i(j['order_total']) : null,
         items: (j['items'] as List? ?? [])
             .map((e) => FulfillItem.fromJson(e as Map<String, dynamic>))
             .toList(),
