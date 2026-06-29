@@ -53,6 +53,7 @@ class FulfillItem {
   final int supplyLineAmount;
   final int storeLineAmount;
   final int storeUnitPrice;
+  final int supplyUnitPrice;
   final bool pricePending;
   final String? supplierName;
   final String? supplyType; // hq | supplier
@@ -66,6 +67,7 @@ class FulfillItem {
     required this.supplyLineAmount,
     required this.storeLineAmount,
     required this.storeUnitPrice,
+    required this.supplyUnitPrice,
     required this.pricePending,
     required this.supplierName,
     required this.supplyType,
@@ -80,6 +82,7 @@ class FulfillItem {
         supplyLineAmount: _i(j['supply_line_amount']),
         storeLineAmount: _i(j['store_line_amount']),
         storeUnitPrice: _i(j['store_unit_price']),
+        supplyUnitPrice: _i(j['supply_unit_price']),
         pricePending: j['price_pending'] as bool? ?? false,
         supplierName: j['supplier_name'] as String?,
         supplyType: j['supply_type'] as String?,

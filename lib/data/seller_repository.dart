@@ -89,6 +89,17 @@ class SellerRepository {
     return body['message'] as String? ?? '거래명세서를 전송했습니다.';
   }
 
+  // 품목 공급가/출고가/수량 수정 (본사)
+  Future<String> editOrderItem(
+      int orderId, int itemId, int supplyUnitPrice, int storeUnitPrice, int qty) async {
+    final body = await _patch('/seller/orders/$orderId/items/$itemId/edit', {
+      'supply_unit_price': supplyUnitPrice,
+      'store_unit_price': storeUnitPrice,
+      'qty': qty,
+    });
+    return body['message'] as String? ?? '품목을 수정했습니다.';
+  }
+
   // 택배비(박스·단가) 등록/수정 (본사)
   Future<String> updateOrderShipping(int orderId, int boxCount, int unitPrice) async {
     final body = await _patch('/seller/orders/$orderId/shipping',

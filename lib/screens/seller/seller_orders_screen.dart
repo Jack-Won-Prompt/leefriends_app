@@ -414,7 +414,7 @@ class _SellerOrderDetailScreenState extends State<SellerOrderDetailScreen> {
 
   Widget _itemTile(SellerOrder o, FulfillItem it) {
     final isHqItem = it.supplyType == 'hq';
-    return Container(
+    final tile = Container(
       margin: const EdgeInsets.only(bottom: 8),
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
@@ -446,6 +446,10 @@ class _SellerOrderDetailScreenState extends State<SellerOrderDetailScreen> {
               Text(won(it.storeLineAmount),
                   style: const TextStyle(
                       fontSize: 14, fontWeight: FontWeight.w800, color: AppColors.accent)),
+            if (widget.isHq) ...[
+              const SizedBox(width: 8),
+              const Icon(Icons.edit_outlined, size: 16, color: AppColors.inkSoft),
+            ],
           ]),
           // 싯가 품목 — 본사 단가 확정
           if (it.pricePending) ...[
@@ -500,6 +504,78 @@ class _SellerOrderDetailScreenState extends State<SellerOrderDetailScreen> {
         ],
       ),
     );
+    if (!widget.isHq) return tile;
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: _busy ? null : () => _editItem(o, it),
+      child: tile,
+    );
+  }
+
+  /// 본사 — 품목 공급가/출고가/수량 수정 팝업.
+  Future<void> _editItem(SellerOrder o, FulfillItem it) async {
+    final supplyCtrl =
+        TextEditingController(text: it.supplyUnitPrice > 0 ? '${it.supplyUnitPrice}' : '');
+    final storeCtrl =
+        TextEditingController(text: it.storeUnitPrice > 0 ? '${it.storeUnitPrice}' : '');
+    final qtyCtrl = TextEditingController(text: '${it.qty}');
+    final saved = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('품목 수정'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(it.productName,
+                style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700)),
+            const SizedBox(height: 12),
+            TextField(
+              controller: supplyCtrl,
+              keyboardType: TextInputType.number,
+              decoration: const InputDecoration(labelText: '공급가 (원)', border: OutlineInputBorder()),
+            ),
+            const SizedBox(height: 10),
+            TextField(
+              controller: storeCtrl,
+              keyboardType: TextInputType.number,
+              decoration:
+                  const InputDecoration(labelText: '출고가 (매장 단가, 원)', border: OutlineInputBorder()),
+            ),
+            const SizedBox(height: 10),
+            TextField(
+              controller: qtyCtrl,
+              keyboardType: TextInputType.number,
+              decoration: const InputDecoration(labelText: '수량', border: OutlineInputBorder()),
+            ),
+            const SizedBox(height: 8),
+            const Text('저장 시 발주 합계가 재계산되고 매장에도 반영·알림됩니다.',
+                style: TextStyle(fontSize: 12, color: AppColors.inkSoft)),
+          ],
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('취소')),
+          FilledButton(
+            onPressed: () {
+              final q = int.tryParse(qtyCtrl.text.trim()) ?? 0;
+              final st = int.tryParse(storeCtrl.text.trim()) ?? 0;
+              if (q < 1) return;
+              if (st < 0) return;
+              Navigator.pop(ctx, true);
+            },
+            child: const Text('저장'),
+          ),
+        ],
+      ),
+    );
+    final supply = int.tryParse(supplyCtrl.text.trim()) ?? 0;
+    final store = int.tryParse(storeCtrl.text.trim()) ?? 0;
+    final qty = int.tryParse(qtyCtrl.text.trim()) ?? 0;
+    supplyCtrl.dispose();
+    storeCtrl.dispose();
+    qtyCtrl.dispose();
+    if (saved != true) return;
+    await _runAction(() => widget.repository.editOrderItem(o.id, it.id, supply, store, qty));
   }
 
   Future<void> _setPrice(SellerOrder o, FulfillItem it) async {
