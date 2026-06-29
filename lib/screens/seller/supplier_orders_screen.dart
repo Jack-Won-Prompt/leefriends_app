@@ -254,7 +254,7 @@ class _SupplierOrderDetailScreenState extends State<SupplierOrderDetailScreen> {
           }
           final o = snap.data!;
           return ListView(
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
+            padding: EdgeInsets.fromLTRB(16, 16, 16, 32 + MediaQuery.of(context).padding.bottom),
             children: [
               Container(
                 padding: const EdgeInsets.all(18),
