@@ -57,6 +57,15 @@ class PushService {
         alert: true, badge: true, sound: true);
 
     _token = await fm.getToken();
+    // iOS: APNs 토큰이 늦게 준비되면 첫 getToken()이 null → APNs 토큰 확보 후 재시도
+    if (_token == null && defaultTargetPlatform == TargetPlatform.iOS) {
+      try {
+        await fm.getAPNSToken();
+        _token = await fm.getToken();
+      } catch (_) {
+        // 무시 — onTokenRefresh 로 추후 등록
+      }
+    }
     fm.onTokenRefresh.listen((t) {
       _token = t;
       _register();
