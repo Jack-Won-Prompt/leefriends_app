@@ -13,7 +13,8 @@ import 'inventory_screen.dart';
 import 'purchases_screen.dart';
 import 'tax_invoices_screen.dart';
 
-/// 매장 로그인 후 홈 대시보드 (카드형 + 현황 요약).
+/// 매장 로그인 후 홈 — 업무 대분류 하단 네비게이션 셸.
+/// 탭: 홈(요약) · 발주·매입 · 입고·재고 · 전자문서
 class StoreHome extends StatefulWidget {
   const StoreHome({
     super.key,
@@ -42,6 +43,7 @@ class StoreHome extends StatefulWidget {
 
 class _StoreHomeState extends State<StoreHome> {
   late Future<StoreDashboard> _dash;
+  int _tab = 0;
 
   @override
   void initState() {
@@ -59,22 +61,6 @@ class _StoreHomeState extends State<StoreHome> {
           .push(MaterialPageRoute(builder: (_) => screen))
           .then((_) => _refresh());
 
-  /// 업무 대분류 섹션 헤더.
-  Widget _sectionTitle(String text) => Padding(
-        padding: const EdgeInsets.fromLTRB(4, 18, 4, 10),
-        child: Row(children: [
-          Container(
-              width: 3,
-              height: 14,
-              decoration: BoxDecoration(
-                  color: AppColors.accent, borderRadius: BorderRadius.circular(2))),
-          const SizedBox(width: 8),
-          Text(text,
-              style: const TextStyle(
-                  fontSize: 15, fontWeight: FontWeight.w800, color: AppColors.ink)),
-        ]),
-      );
-
   Widget _grid(List<Widget> cards) => GridView.count(
         crossAxisCount: 2,
         shrinkWrap: true,
@@ -85,13 +71,24 @@ class _StoreHomeState extends State<StoreHome> {
         children: cards,
       );
 
-  @override
-  Widget build(BuildContext context) {
+  /// 각 탭은 동일한 헤더·새로고침·하단 여백 패턴을 공유.
+  Widget _tabBody(List<Widget> children) {
+    final bottom = 28 + MediaQuery.of(context).padding.bottom;
     return RefreshIndicator(
       color: AppColors.accent,
       onRefresh: _refresh,
       child: ListView(
-        padding: EdgeInsets.zero,
+        padding: EdgeInsets.fromLTRB(16, 16, 16, bottom),
+        children: children,
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: AppColors.cream,
+      body: Column(
         children: [
           DashboardHeader(
             greeting: '안녕하세요 👋',
@@ -102,115 +99,168 @@ class _StoreHomeState extends State<StoreHome> {
             onChat: widget.onChat,
             onLogout: widget.onLogout,
           ),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 18, 16, 28),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+          Expanded(
+            child: IndexedStack(
+              index: _tab,
               children: [
-                // 현황 요약
-                FutureBuilder<StoreDashboard>(
-                  future: _dash,
-                  builder: (context, snap) {
-                    final d = snap.data;
-                    return Column(children: [
-                      Row(children: [
-                        _StoreStat(
-                            label: '진행중 발주',
-                            value: d?.activeOrders,
-                            hint: '처리중',
-                            color: AppColors.mango600,
-                            onTap: () => _push(context,
-                                OrdersScreen(repository: widget.order, activeOnly: true))),
-                        const SizedBox(width: 12),
-                        _StoreStat(
-                            label: '입고 대기',
-                            value: d?.inTransit,
-                            hint: '배송중',
-                            color: const Color(0xFF1E8E4E),
-                            onTap: () => _push(context, InboundScreen(repository: widget.ops))),
-                      ]),
-                      const SizedBox(height: 12),
-                      Row(children: [
-                        _StoreStat(
-                            label: '재고 품목',
-                            value: d?.inventoryItems,
-                            hint: '부족 ${d?.lowStock ?? '-'}',
-                            color: const Color(0xFF1B6CC4),
-                            onTap: () => _push(context, InventoryScreen(repository: widget.ops))),
-                        const SizedBox(width: 12),
-                        _StoreStat(
-                            label: '이번 달 매입',
-                            valueText: d == null ? null : won(d.monthAmount),
-                            hint: '합계',
-                            color: AppColors.mango700,
-                            onTap: () => _push(
-                                context,
-                                PurchasesScreen(
-                                    repository: widget.ops,
-                                    orderRepository: widget.order,
-                                    initialPeriod: 'month'))),
-                      ]),
-                    ]);
-                  },
-                ),
-                const SizedBox(height: 20),
-                // 주요 액션 — 물품 발주
-                _PrimaryCta(
-                  onTap: () => _push(
-                      context, CatalogScreen(repository: widget.order, cart: widget.cart)),
-                ),
-              // ── 발주·매입 ──
-              _sectionTitle('발주·매입'),
-              _grid([
-                _FeatureCard(
-                  icon: Icons.receipt_long_outlined,
-                  title: '발주 내역',
-                  sub: '주문·수정·취소',
-                  onTap: () => _push(context, OrdersScreen(repository: widget.order)),
-                ),
-                _FeatureCard(
-                  icon: Icons.payments_outlined,
-                  title: '매입 내역',
-                  sub: '기간별 합계',
-                  onTap: () => _push(context,
-                      PurchasesScreen(repository: widget.ops, orderRepository: widget.order)),
-                ),
-              ]),
+                _homeTab(),
+                _orderPurchaseTab(),
+                _inboundStockTab(),
+                _docsTab(),
+              ],
+            ),
+          ),
+        ],
+      ),
+      bottomNavigationBar: _bottomNav(),
+    );
+  }
 
-              // ── 입고·재고 ──
-              _sectionTitle('입고·재고'),
-              _grid([
-                _FeatureCard(
-                  icon: Icons.local_shipping_outlined,
-                  title: '입고 예정',
-                  sub: '배송중·입고처리',
-                  onTap: () => _push(context, InboundScreen(repository: widget.ops)),
-                ),
-                _FeatureCard(
-                  icon: Icons.inventory_2_outlined,
-                  title: '재고',
-                  sub: '현황·사용',
-                  onTap: () => _push(context, InventoryScreen(repository: widget.ops)),
-                ),
-              ]),
-
-              // ── 전자문서 ──
-              _sectionTitle('전자문서'),
-              _grid([
-                _FeatureCard(
-                  icon: Icons.description_outlined,
-                  title: '세금계산서',
-                  sub: '본사 발행분',
-                  onTap: () => _push(context, TaxInvoicesScreen(repository: widget.ops)),
-                ),
-              ]),
+  Widget _bottomNav() => Container(
+        decoration: const BoxDecoration(
+          color: AppColors.surface,
+          border: Border(top: BorderSide(color: AppColors.line)),
+        ),
+        child: SafeArea(
+          top: false,
+          child: BottomNavigationBar(
+            type: BottomNavigationBarType.fixed,
+            backgroundColor: AppColors.surface,
+            currentIndex: _tab,
+            selectedItemColor: AppColors.accent,
+            unselectedItemColor: AppColors.inkSoft,
+            selectedFontSize: 12,
+            unselectedFontSize: 12,
+            onTap: (i) => setState(() => _tab = i),
+            items: const [
+              BottomNavigationBarItem(
+                  icon: Icon(Icons.dashboard_outlined),
+                  activeIcon: Icon(Icons.dashboard_rounded),
+                  label: '홈'),
+              BottomNavigationBarItem(
+                  icon: Icon(Icons.receipt_long_outlined),
+                  activeIcon: Icon(Icons.receipt_long),
+                  label: '발주·매입'),
+              BottomNavigationBarItem(
+                  icon: Icon(Icons.inventory_2_outlined),
+                  activeIcon: Icon(Icons.inventory_2),
+                  label: '입고·재고'),
+              BottomNavigationBarItem(
+                  icon: Icon(Icons.description_outlined),
+                  activeIcon: Icon(Icons.description),
+                  label: '전자문서'),
             ],
           ),
         ),
-        ],
-      ),
-    );
-  }
+      );
+
+  // ── 홈(요약) ──
+  Widget _homeTab() => _tabBody([
+        FutureBuilder<StoreDashboard>(
+          future: _dash,
+          builder: (context, snap) {
+            final d = snap.data;
+            return Column(children: [
+              Row(children: [
+                _StoreStat(
+                    label: '진행중 발주',
+                    value: d?.activeOrders,
+                    hint: '처리중',
+                    color: AppColors.mango600,
+                    onTap: () => _push(context,
+                        OrdersScreen(repository: widget.order, activeOnly: true))),
+                const SizedBox(width: 12),
+                _StoreStat(
+                    label: '입고 대기',
+                    value: d?.inTransit,
+                    hint: '배송중',
+                    color: const Color(0xFF1E8E4E),
+                    onTap: () => _push(context, InboundScreen(repository: widget.ops))),
+              ]),
+              const SizedBox(height: 12),
+              Row(children: [
+                _StoreStat(
+                    label: '재고 품목',
+                    value: d?.inventoryItems,
+                    hint: '부족 ${d?.lowStock ?? '-'}',
+                    color: const Color(0xFF1B6CC4),
+                    onTap: () => _push(context, InventoryScreen(repository: widget.ops))),
+                const SizedBox(width: 12),
+                _StoreStat(
+                    label: '이번 달 매입',
+                    valueText: d == null ? null : won(d.monthAmount),
+                    hint: '합계',
+                    color: AppColors.mango700,
+                    onTap: () => _push(
+                        context,
+                        PurchasesScreen(
+                            repository: widget.ops,
+                            orderRepository: widget.order,
+                            initialPeriod: 'month'))),
+              ]),
+            ]);
+          },
+        ),
+        const SizedBox(height: 20),
+        _PrimaryCta(
+          onTap: () => _push(
+              context, CatalogScreen(repository: widget.order, cart: widget.cart)),
+        ),
+      ]);
+
+  // ── 발주·매입 ──
+  Widget _orderPurchaseTab() => _tabBody([
+        _PrimaryCta(
+          onTap: () => _push(
+              context, CatalogScreen(repository: widget.order, cart: widget.cart)),
+        ),
+        const SizedBox(height: 16),
+        _grid([
+          _FeatureCard(
+            icon: Icons.receipt_long_outlined,
+            title: '발주 내역',
+            sub: '주문·수정·취소',
+            onTap: () => _push(context, OrdersScreen(repository: widget.order)),
+          ),
+          _FeatureCard(
+            icon: Icons.payments_outlined,
+            title: '매입 내역',
+            sub: '기간별 합계',
+            onTap: () => _push(context,
+                PurchasesScreen(repository: widget.ops, orderRepository: widget.order)),
+          ),
+        ]),
+      ]);
+
+  // ── 입고·재고 ──
+  Widget _inboundStockTab() => _tabBody([
+        _grid([
+          _FeatureCard(
+            icon: Icons.local_shipping_outlined,
+            title: '입고 예정',
+            sub: '배송중·입고처리',
+            onTap: () => _push(context, InboundScreen(repository: widget.ops)),
+          ),
+          _FeatureCard(
+            icon: Icons.inventory_2_outlined,
+            title: '재고',
+            sub: '현황·사용',
+            onTap: () => _push(context, InventoryScreen(repository: widget.ops)),
+          ),
+        ]),
+      ]);
+
+  // ── 전자문서 ──
+  Widget _docsTab() => _tabBody([
+        _grid([
+          _FeatureCard(
+            icon: Icons.description_outlined,
+            title: '세금계산서',
+            sub: '본사 발행분',
+            onTap: () => _push(context, TaxInvoicesScreen(repository: widget.ops)),
+          ),
+        ]),
+      ]);
 }
 
 class _StoreStat extends StatelessWidget {

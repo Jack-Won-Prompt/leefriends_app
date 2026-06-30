@@ -51,6 +51,7 @@ class SellerHome extends StatefulWidget {
 
 class _SellerHomeState extends State<SellerHome> {
   late Future<SellerDashboard> _future;
+  int _tab = 0;
 
   @override
   void initState() {
@@ -69,26 +70,63 @@ class _SellerHomeState extends State<SellerHome> {
         .then((_) => _reload());
   }
 
-  /// 업무 대분류 섹션 헤더.
-  Widget _sectionTitle(String text) => Padding(
-        padding: const EdgeInsets.fromLTRB(4, 14, 4, 10),
-        child: Row(children: [
-          Container(width: 3, height: 14, decoration: BoxDecoration(
-              color: AppColors.accent, borderRadius: BorderRadius.circular(2))),
-          const SizedBox(width: 8),
-          Text(text,
-              style: const TextStyle(
-                  fontSize: 14, fontWeight: FontWeight.w800, color: AppColors.ink)),
-        ]),
-      );
+  bool get _isHq => widget.roleLabel == '본사';
 
-  @override
-  Widget build(BuildContext context) {
+  /// 각 탭 공통 — 새로고침 + 하단 안전여백.
+  Widget _tabBody(List<Widget> children) {
+    final bottom = 32 + MediaQuery.of(context).padding.bottom;
     return RefreshIndicator(
       color: AppColors.accent,
       onRefresh: _reload,
       child: ListView(
-        padding: EdgeInsets.zero,
+        padding: EdgeInsets.fromLTRB(16, 18, 16, bottom),
+        children: children,
+      ),
+    );
+  }
+
+  /// 업무 대분류 탭 정의 (역할에 따라 동적).
+  List<_TabDef> get _tabs => [
+        _TabDef(
+          icon: Icons.assignment_outlined,
+          activeIcon: Icons.assignment,
+          label: '발주',
+          page: _orderTab,
+        ),
+        _TabDef(
+          icon: Icons.local_shipping_outlined,
+          activeIcon: Icons.local_shipping,
+          label: '출고',
+          page: _shipTab,
+        ),
+        _TabDef(
+          icon: Icons.payments_outlined,
+          activeIcon: Icons.payments,
+          label: '정산',
+          page: _settleTab,
+        ),
+        _TabDef(
+          icon: Icons.category_outlined,
+          activeIcon: Icons.category,
+          label: '상품',
+          page: _productTab,
+        ),
+        if (_isHq)
+          _TabDef(
+            icon: Icons.store_outlined,
+            activeIcon: Icons.store,
+            label: '거래처',
+            page: _partnerTab,
+          ),
+      ];
+
+  @override
+  Widget build(BuildContext context) {
+    final tabs = _tabs;
+    final index = _tab.clamp(0, tabs.length - 1);
+    return Scaffold(
+      backgroundColor: AppColors.cream,
+      body: Column(
         children: [
           DashboardHeader(
             greeting: '안녕하세요 👋',
@@ -99,253 +137,298 @@ class _SellerHomeState extends State<SellerHome> {
             onChat: widget.onChat ?? () {},
             onLogout: widget.onLogout ?? () {},
           ),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 18, 16, 32),
-            child: Column(children: [
-          FutureBuilder<SellerDashboard>(
-            future: _future,
-            builder: (context, snap) {
-              final d = snap.data;
-              return Column(
-                children: [
-                  Row(children: [
-                    _Stat(
-                      label: '확인 대기',
-                      value: d?.pendingSalesOrders,
-                      hint: '판매주문',
-                      color: AppColors.mango600,
-                      onTap: () => _go(SellerSalesOrdersScreen(
-                          repository: widget.repository,
-                          onChanged: widget.onChanged,
-                          initialStatus: 'created')),
-                    ),
-                    const SizedBox(width: 12),
-                    _Stat(
-                      label: '출고 대기',
-                      value: d?.confirmedSalesOrders,
-                      hint: '확인됨',
-                      color: const Color(0xFF1B6CC4),
-                      onTap: () => _go(SellerSalesOrdersScreen(
-                          repository: widget.repository,
-                          onChanged: widget.onChanged,
-                          initialStatus: 'confirmed')),
-                    ),
-                  ]),
-                  const SizedBox(height: 12),
-                  Row(children: [
-                    _Stat(
-                      label: '송장 대기',
-                      value: d?.shipmentsToConfirm,
-                      hint: '출고 생성됨',
-                      color: AppColors.mango700,
-                      onTap: () => _go(SellerShipmentsScreen(
-                          repository: widget.repository,
-                          onChanged: widget.onChanged,
-                          initialStatus: 'created')),
-                    ),
-                    const SizedBox(width: 12),
-                    _Stat(
-                      label: '배송중',
-                      value: d?.inTransit,
-                      hint: '오늘 발주 ${d?.todayOrders ?? '-'}건',
-                      color: const Color(0xFF1E8E4E),
-                      onTap: () => _go(SellerShipmentsScreen(
-                          repository: widget.repository,
-                          onChanged: widget.onChanged,
-                          initialStatus: 'confirmed')),
-                    ),
-                  ]),
-                ],
-              );
-            },
-          ),
-          const SizedBox(height: 12),
-
-          // ── 발주·주문 처리 ──
-          _sectionTitle('발주·주문 처리'),
-          _NavCard(
-            icon: Icons.inbox_outlined,
-            title: '받은 발주',
-            sub: '매장에서 들어온 발주 확인',
-            onTap: () => _go(SellerOrdersScreen(
-                repository: widget.repository, isHq: widget.roleLabel == '본사')),
-          ),
-          _NavCard(
-            icon: Icons.fact_check_outlined,
-            title: '판매주문',
-            sub: '판매주문 확인(confirm)',
-            onTap: () => _go(SellerSalesOrdersScreen(
-                repository: widget.repository, onChanged: widget.onChanged)),
-          ),
-          FutureBuilder<SellerDashboard>(
-            future: _future,
-            builder: (context, snap) => _NavCard(
-              icon: Icons.published_with_changes_outlined,
-              title: '주문 변경 반영',
-              sub: '매장 발주 수정/취소 확인',
-              badge: snap.data?.pendingChanges ?? 0,
-              onTap: () => _go(OrderChangesScreen(
-                  repository: widget.repository, onChanged: _reload)),
+          Expanded(
+            child: IndexedStack(
+              index: index,
+              children: [for (final t in tabs) t.page()],
             ),
-          ),
-          if (widget.roleLabel == '본사')
-            _NavCard(
-              icon: Icons.inventory_outlined,
-              title: '공급사 발주 현황',
-              sub: '공급사별 발주 모아보기',
-              onTap: () => _go(SupplierOrdersScreen(repository: widget.repository)),
-            ),
-
-          // ── 출고·배송 ──
-          _sectionTitle('출고·배송'),
-          _NavCard(
-            icon: Icons.local_shipping_outlined,
-            title: '출고',
-            sub: '출고 생성·송장 입력·확정',
-            onTap: () => _go(SellerShipmentsScreen(
-                repository: widget.repository, onChanged: widget.onChanged)),
-          ),
-          _NavCard(
-            icon: Icons.add_box_outlined,
-            title: '출고 생성',
-            sub: '확정 판매주문 → 출고 만들기',
-            onTap: () => _go(CreateShipmentScreen(repository: widget.repository)),
-          ),
-
-          // ── 정산·전자문서 ──
-          _sectionTitle('정산·전자문서'),
-          _NavCard(
-            icon: Icons.bar_chart_outlined,
-            title: '매출 현황',
-            sub: '기간별·매장별 매출',
-            onTap: () => _go(SalesScreen(repository: widget.repository)),
-          ),
-          _NavCard(
-            icon: Icons.description_outlined,
-            title: '세금계산서',
-            sub: widget.roleLabel == '본사' ? '매장 발행·취소·이력' : '본사 청구 발행·취소',
-            onTap: () => _go(SellerTaxInvoicesScreen(
-                repository: widget.repository, roleLabel: widget.roleLabel)),
-          ),
-          _NavCard(
-            icon: Icons.receipt_long_outlined,
-            title: '거래명세서',
-            sub: widget.roleLabel == '본사' ? '매장 작성·전송' : '본사 작성·전송·발행',
-            onTap: () => _go(SellerStatementsScreen(
-                repository: widget.repository, roleLabel: widget.roleLabel)),
-          ),
-
-          // ── 상품·기준정보 ──
-          _sectionTitle('상품·기준정보'),
-          _NavCard(
-            icon: Icons.category_outlined,
-            title: '상품 관리',
-            sub: widget.roleLabel == '본사' ? '품목 등록·수정·승인' : '자사 물품 등록·수정',
-            onTap: () => _go(ProductsScreen(repository: widget.repository)),
-          ),
-          if (widget.roleLabel == '본사')
-            _NavCard(
-              icon: Icons.folder_outlined,
-              title: '카테고리 관리',
-              sub: '품목 대분류 관리',
-              onTap: () => _go(CategoriesScreen(repository: widget.repository)),
-            ),
-
-          // ── 거래처·운영 (본사) ──
-          if (widget.roleLabel == '본사') ...[
-            _sectionTitle('거래처·운영'),
-            _NavCard(
-              icon: Icons.handshake_outlined,
-              title: '공급처 관리',
-              sub: '공급처 초대·수정',
-              onTap: () => _go(SuppliersScreen(repository: widget.repository)),
-            ),
-            _NavCard(
-              icon: Icons.store_mall_directory_outlined,
-              title: '매장 관리',
-              sub: '매장 초대·수정',
-              onTap: () => _go(StoresManageScreen(repository: widget.repository)),
-            ),
-            _NavCard(
-              icon: Icons.campaign_outlined,
-              title: '공지 관리',
-              sub: '포털 공지 발송',
-              onTap: () => _go(NoticesManageScreen(repository: widget.repository)),
-            ),
-            _NavCard(
-              icon: Icons.contact_mail_outlined,
-              title: '가맹문의',
-              sub: '문의 상담·처리',
-              onTap: () => _go(InquiriesScreen(repository: widget.repository)),
-            ),
-          ],
-          const SizedBox(height: 16),
-          FutureBuilder<SellerDashboard>(
-            future: _future,
-            builder: (context, snap) {
-              final recent = snap.data?.recentOrders ?? const [];
-              if (recent.isEmpty) return const SizedBox.shrink();
-              return Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Padding(
-                    padding: EdgeInsets.fromLTRB(4, 4, 4, 10),
-                    child: Text('최근 발주 현황',
-                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800)),
-                  ),
-                  for (final o in recent)
-                    GestureDetector(
-                      onTap: () => _go(SellerOrderDetailScreen(
-                          repository: widget.repository, id: o.id)),
-                      child: Container(
-                        margin: const EdgeInsets.only(bottom: 8),
-                        padding: const EdgeInsets.all(14),
-                        decoration: BoxDecoration(
-                          color: AppColors.surface,
-                          borderRadius: BorderRadius.circular(14),
-                          border: Border.all(color: AppColors.line),
-                        ),
-                        child: Row(
-                          children: [
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Row(children: [
-                                    Expanded(
-                                      child: Text(o.orderNo,
-                                          style: const TextStyle(
-                                              fontSize: 13, fontWeight: FontWeight.w800)),
-                                    ),
-                                    FulfillStatusChip(status: o.status, label: o.statusLabel),
-                                  ]),
-                                  const SizedBox(height: 4),
-                                  Text('${o.storeName ?? ''} · ${o.itemCount}품목 · ${o.createdAt ?? ''}',
-                                      style: const TextStyle(
-                                          fontSize: 12, color: AppColors.inkSoft)),
-                                ],
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            Text(won(o.storeAmount),
-                                style: const TextStyle(
-                                    fontSize: 13,
-                                    fontWeight: FontWeight.w800,
-                                    color: AppColors.accent)),
-                          ],
-                        ),
-                      ),
-                    ),
-                ],
-              );
-            },
-          ),
-            ]),
           ),
         ],
       ),
+      bottomNavigationBar: Container(
+        decoration: const BoxDecoration(
+          color: AppColors.surface,
+          border: Border(top: BorderSide(color: AppColors.line)),
+        ),
+        child: SafeArea(
+          top: false,
+          child: BottomNavigationBar(
+            type: BottomNavigationBarType.fixed,
+            backgroundColor: AppColors.surface,
+            currentIndex: index,
+            selectedItemColor: AppColors.accent,
+            unselectedItemColor: AppColors.inkSoft,
+            selectedFontSize: 12,
+            unselectedFontSize: 12,
+            onTap: (i) => setState(() => _tab = i),
+            items: [
+              for (final t in tabs)
+                BottomNavigationBarItem(
+                  icon: Icon(t.icon),
+                  activeIcon: Icon(t.activeIcon),
+                  label: t.label,
+                ),
+            ],
+          ),
+        ),
+      ),
     );
   }
+
+  // ── 발주: 요약 KPI + 발주 처리 + 최근 발주 ──
+  Widget _orderTab() => _tabBody([
+        FutureBuilder<SellerDashboard>(
+          future: _future,
+          builder: (context, snap) {
+            final d = snap.data;
+            return Column(
+              children: [
+                Row(children: [
+                  _Stat(
+                    label: '확인 대기',
+                    value: d?.pendingSalesOrders,
+                    hint: '판매주문',
+                    color: AppColors.mango600,
+                    onTap: () => _go(SellerSalesOrdersScreen(
+                        repository: widget.repository,
+                        onChanged: widget.onChanged,
+                        initialStatus: 'created')),
+                  ),
+                  const SizedBox(width: 12),
+                  _Stat(
+                    label: '출고 대기',
+                    value: d?.confirmedSalesOrders,
+                    hint: '확인됨',
+                    color: const Color(0xFF1B6CC4),
+                    onTap: () => _go(SellerSalesOrdersScreen(
+                        repository: widget.repository,
+                        onChanged: widget.onChanged,
+                        initialStatus: 'confirmed')),
+                  ),
+                ]),
+                const SizedBox(height: 12),
+                Row(children: [
+                  _Stat(
+                    label: '송장 대기',
+                    value: d?.shipmentsToConfirm,
+                    hint: '출고 생성됨',
+                    color: AppColors.mango700,
+                    onTap: () => _go(SellerShipmentsScreen(
+                        repository: widget.repository,
+                        onChanged: widget.onChanged,
+                        initialStatus: 'created')),
+                  ),
+                  const SizedBox(width: 12),
+                  _Stat(
+                    label: '배송중',
+                    value: d?.inTransit,
+                    hint: '오늘 발주 ${d?.todayOrders ?? '-'}건',
+                    color: const Color(0xFF1E8E4E),
+                    onTap: () => _go(SellerShipmentsScreen(
+                        repository: widget.repository,
+                        onChanged: widget.onChanged,
+                        initialStatus: 'confirmed')),
+                  ),
+                ]),
+              ],
+            );
+          },
+        ),
+        const SizedBox(height: 14),
+        _NavCard(
+          icon: Icons.inbox_outlined,
+          title: '받은 발주',
+          sub: '매장에서 들어온 발주 확인',
+          onTap: () => _go(SellerOrdersScreen(
+              repository: widget.repository, isHq: _isHq)),
+        ),
+        _NavCard(
+          icon: Icons.fact_check_outlined,
+          title: '판매주문',
+          sub: '판매주문 확인(confirm)',
+          onTap: () => _go(SellerSalesOrdersScreen(
+              repository: widget.repository, onChanged: widget.onChanged)),
+        ),
+        FutureBuilder<SellerDashboard>(
+          future: _future,
+          builder: (context, snap) => _NavCard(
+            icon: Icons.published_with_changes_outlined,
+            title: '주문 변경 반영',
+            sub: '매장 발주 수정/취소 확인',
+            badge: snap.data?.pendingChanges ?? 0,
+            onTap: () => _go(OrderChangesScreen(
+                repository: widget.repository, onChanged: _reload)),
+          ),
+        ),
+        if (_isHq)
+          _NavCard(
+            icon: Icons.inventory_outlined,
+            title: '공급사 발주 현황',
+            sub: '공급사별 발주 모아보기',
+            onTap: () => _go(SupplierOrdersScreen(repository: widget.repository)),
+          ),
+        const SizedBox(height: 8),
+        FutureBuilder<SellerDashboard>(
+          future: _future,
+          builder: (context, snap) {
+            final recent = snap.data?.recentOrders ?? const [];
+            if (recent.isEmpty) return const SizedBox.shrink();
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Padding(
+                  padding: EdgeInsets.fromLTRB(4, 6, 4, 10),
+                  child: Text('최근 발주 현황',
+                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800)),
+                ),
+                for (final o in recent)
+                  GestureDetector(
+                    onTap: () => _go(SellerOrderDetailScreen(
+                        repository: widget.repository, id: o.id)),
+                    child: Container(
+                      margin: const EdgeInsets.only(bottom: 8),
+                      padding: const EdgeInsets.all(14),
+                      decoration: BoxDecoration(
+                        color: AppColors.surface,
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(color: AppColors.line),
+                      ),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(children: [
+                                  Expanded(
+                                    child: Text(o.orderNo,
+                                        style: const TextStyle(
+                                            fontSize: 13, fontWeight: FontWeight.w800)),
+                                  ),
+                                  FulfillStatusChip(status: o.status, label: o.statusLabel),
+                                ]),
+                                const SizedBox(height: 4),
+                                Text('${o.storeName ?? ''} · ${o.itemCount}품목 · ${o.createdAt ?? ''}',
+                                    style: const TextStyle(
+                                        fontSize: 12, color: AppColors.inkSoft)),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Text(won(o.storeAmount),
+                              style: const TextStyle(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w800,
+                                  color: AppColors.accent)),
+                        ],
+                      ),
+                    ),
+                  ),
+              ],
+            );
+          },
+        ),
+      ]);
+
+  // ── 출고·배송 ──
+  Widget _shipTab() => _tabBody([
+        _NavCard(
+          icon: Icons.local_shipping_outlined,
+          title: '출고',
+          sub: '출고 생성·송장 입력·확정',
+          onTap: () => _go(SellerShipmentsScreen(
+              repository: widget.repository, onChanged: widget.onChanged)),
+        ),
+        _NavCard(
+          icon: Icons.add_box_outlined,
+          title: '출고 생성',
+          sub: '확정 판매주문 → 출고 만들기',
+          onTap: () => _go(CreateShipmentScreen(repository: widget.repository)),
+        ),
+      ]);
+
+  // ── 정산·전자문서 ──
+  Widget _settleTab() => _tabBody([
+        _NavCard(
+          icon: Icons.bar_chart_outlined,
+          title: '매출 현황',
+          sub: '기간별·매장별 매출',
+          onTap: () => _go(SalesScreen(repository: widget.repository)),
+        ),
+        _NavCard(
+          icon: Icons.description_outlined,
+          title: '세금계산서',
+          sub: _isHq ? '매장 발행·취소·이력' : '본사 청구 발행·취소',
+          onTap: () => _go(SellerTaxInvoicesScreen(
+              repository: widget.repository, roleLabel: widget.roleLabel)),
+        ),
+        _NavCard(
+          icon: Icons.receipt_long_outlined,
+          title: '거래명세서',
+          sub: _isHq ? '매장 작성·전송' : '본사 작성·전송·발행',
+          onTap: () => _go(SellerStatementsScreen(
+              repository: widget.repository, roleLabel: widget.roleLabel)),
+        ),
+      ]);
+
+  // ── 상품·기준정보 ──
+  Widget _productTab() => _tabBody([
+        _NavCard(
+          icon: Icons.category_outlined,
+          title: '상품 관리',
+          sub: _isHq ? '품목 등록·수정·승인' : '자사 물품 등록·수정',
+          onTap: () => _go(ProductsScreen(repository: widget.repository)),
+        ),
+        if (_isHq)
+          _NavCard(
+            icon: Icons.folder_outlined,
+            title: '카테고리 관리',
+            sub: '품목 대분류 관리',
+            onTap: () => _go(CategoriesScreen(repository: widget.repository)),
+          ),
+      ]);
+
+  // ── 거래처·운영 (본사 전용) ──
+  Widget _partnerTab() => _tabBody([
+        _NavCard(
+          icon: Icons.handshake_outlined,
+          title: '공급처 관리',
+          sub: '공급처 초대·수정',
+          onTap: () => _go(SuppliersScreen(repository: widget.repository)),
+        ),
+        _NavCard(
+          icon: Icons.store_mall_directory_outlined,
+          title: '매장 관리',
+          sub: '매장 초대·수정',
+          onTap: () => _go(StoresManageScreen(repository: widget.repository)),
+        ),
+        _NavCard(
+          icon: Icons.campaign_outlined,
+          title: '공지 관리',
+          sub: '포털 공지 발송',
+          onTap: () => _go(NoticesManageScreen(repository: widget.repository)),
+        ),
+        _NavCard(
+          icon: Icons.contact_mail_outlined,
+          title: '가맹문의',
+          sub: '문의 상담·처리',
+          onTap: () => _go(InquiriesScreen(repository: widget.repository)),
+        ),
+      ]);
+}
+
+/// 업무 대분류 탭 정의.
+class _TabDef {
+  const _TabDef({
+    required this.icon,
+    required this.activeIcon,
+    required this.label,
+    required this.page,
+  });
+  final IconData icon;
+  final IconData activeIcon;
+  final String label;
+  final Widget Function() page;
 }
 
 class _Stat extends StatelessWidget {

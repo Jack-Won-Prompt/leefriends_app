@@ -76,30 +76,28 @@ class _OrderHubState extends State<OrderHub> {
         }
 
         final user = auth.user!;
-        return Scaffold(
-          backgroundColor: AppColors.cream,
-          body: user.isStore
-              ? StoreHome(
-                  storeName: user.storeName ?? '매장',
-                  order: _repository,
-                  ops: _ops,
-                  cart: widget.cart,
-                  unread: _unread,
-                  onNotifications: _openNotifications,
-                  onChat: _openChat,
-                  onLogout: () => _confirmLogout(auth),
-                )
-              : SellerHome(
-                  repository: _seller,
-                  name: user.name,
-                  roleLabel: user.roleLabel,
-                  unread: _unread,
-                  onNotifications: _openNotifications,
-                  onChat: _openChat,
-                  onLogout: () => _confirmLogout(auth),
-                  onChanged: _refreshUnread,
-                ),
-        );
+        // 로그인 후엔 역할별 셸이 자체 하단 네비게이션(업무 대분류)을 가짐.
+        return user.isStore
+            ? StoreHome(
+                storeName: user.storeName ?? '매장',
+                order: _repository,
+                ops: _ops,
+                cart: widget.cart,
+                unread: _unread,
+                onNotifications: _openNotifications,
+                onChat: _openChat,
+                onLogout: () => _confirmLogout(auth),
+              )
+            : SellerHome(
+                repository: _seller,
+                name: user.name,
+                roleLabel: user.roleLabel,
+                unread: _unread,
+                onNotifications: _openNotifications,
+                onChat: _openChat,
+                onLogout: () => _confirmLogout(auth),
+                onChanged: _refreshUnread,
+              );
       },
     );
   }

@@ -39,6 +39,20 @@ class _RootScaffoldState extends State<RootScaffold> {
 
   @override
   Widget build(BuildContext context) {
+    // 로그인 후엔 역할별 셸(OrderHub)이 자체 하단 네비게이션으로 전체화면 차지 →
+    // 공개용 홈/메뉴/로그인 3탭 바를 대체.
+    return ListenableBuilder(
+      listenable: widget.auth,
+      builder: (context, _) {
+        if (widget.auth.isLoggedIn) {
+          return OrderHub(auth: widget.auth, cart: _cart);
+        }
+        return _publicScaffold(context);
+      },
+    );
+  }
+
+  Widget _publicScaffold(BuildContext context) {
     final pages = [
       HomeScreen(
         repository: widget.repository,
