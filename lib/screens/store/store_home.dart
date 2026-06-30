@@ -59,6 +59,32 @@ class _StoreHomeState extends State<StoreHome> {
           .push(MaterialPageRoute(builder: (_) => screen))
           .then((_) => _refresh());
 
+  /// 업무 대분류 섹션 헤더.
+  Widget _sectionTitle(String text) => Padding(
+        padding: const EdgeInsets.fromLTRB(4, 18, 4, 10),
+        child: Row(children: [
+          Container(
+              width: 3,
+              height: 14,
+              decoration: BoxDecoration(
+                  color: AppColors.accent, borderRadius: BorderRadius.circular(2))),
+          const SizedBox(width: 8),
+          Text(text,
+              style: const TextStyle(
+                  fontSize: 15, fontWeight: FontWeight.w800, color: AppColors.ink)),
+        ]),
+      );
+
+  Widget _grid(List<Widget> cards) => GridView.count(
+        crossAxisCount: 2,
+        shrinkWrap: true,
+        physics: const NeverScrollableScrollPhysics(),
+        mainAxisSpacing: 12,
+        crossAxisSpacing: 12,
+        childAspectRatio: 1.25,
+        children: cards,
+      );
+
   @override
   Widget build(BuildContext context) {
     return RefreshIndicator(
@@ -133,53 +159,51 @@ class _StoreHomeState extends State<StoreHome> {
                   onTap: () => _push(
                       context, CatalogScreen(repository: widget.order, cart: widget.cart)),
                 ),
-              const SizedBox(height: 22),
-              const Padding(
-                padding: EdgeInsets.only(left: 4, bottom: 12),
-                child: Text('바로가기',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800)),
-              ),
-              GridView.count(
-                crossAxisCount: 2,
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                mainAxisSpacing: 12,
-                crossAxisSpacing: 12,
-                childAspectRatio: 1.25,
-                children: [
-                  _FeatureCard(
-                    icon: Icons.receipt_long_outlined,
-                    title: '발주 내역',
-                    sub: '주문·수정·취소',
-                    onTap: () => _push(context, OrdersScreen(repository: widget.order)),
-                  ),
-                  _FeatureCard(
-                    icon: Icons.payments_outlined,
-                    title: '매입 내역',
-                    sub: '기간별 합계',
-                    onTap: () => _push(context,
-                        PurchasesScreen(repository: widget.ops, orderRepository: widget.order)),
-                  ),
-                  _FeatureCard(
-                    icon: Icons.local_shipping_outlined,
-                    title: '입고 예정',
-                    sub: '배송중·입고처리',
-                    onTap: () => _push(context, InboundScreen(repository: widget.ops)),
-                  ),
-                  _FeatureCard(
-                    icon: Icons.inventory_2_outlined,
-                    title: '재고',
-                    sub: '현황·사용',
-                    onTap: () => _push(context, InventoryScreen(repository: widget.ops)),
-                  ),
-                  _FeatureCard(
-                    icon: Icons.description_outlined,
-                    title: '세금계산서',
-                    sub: '본사 발행분',
-                    onTap: () => _push(context, TaxInvoicesScreen(repository: widget.ops)),
-                  ),
-                ],
-              ),
+              // ── 발주·매입 ──
+              _sectionTitle('발주·매입'),
+              _grid([
+                _FeatureCard(
+                  icon: Icons.receipt_long_outlined,
+                  title: '발주 내역',
+                  sub: '주문·수정·취소',
+                  onTap: () => _push(context, OrdersScreen(repository: widget.order)),
+                ),
+                _FeatureCard(
+                  icon: Icons.payments_outlined,
+                  title: '매입 내역',
+                  sub: '기간별 합계',
+                  onTap: () => _push(context,
+                      PurchasesScreen(repository: widget.ops, orderRepository: widget.order)),
+                ),
+              ]),
+
+              // ── 입고·재고 ──
+              _sectionTitle('입고·재고'),
+              _grid([
+                _FeatureCard(
+                  icon: Icons.local_shipping_outlined,
+                  title: '입고 예정',
+                  sub: '배송중·입고처리',
+                  onTap: () => _push(context, InboundScreen(repository: widget.ops)),
+                ),
+                _FeatureCard(
+                  icon: Icons.inventory_2_outlined,
+                  title: '재고',
+                  sub: '현황·사용',
+                  onTap: () => _push(context, InventoryScreen(repository: widget.ops)),
+                ),
+              ]),
+
+              // ── 전자문서 ──
+              _sectionTitle('전자문서'),
+              _grid([
+                _FeatureCard(
+                  icon: Icons.description_outlined,
+                  title: '세금계산서',
+                  sub: '본사 발행분',
+                  onTap: () => _push(context, TaxInvoicesScreen(repository: widget.ops)),
+                ),
+              ]),
             ],
           ),
         ),

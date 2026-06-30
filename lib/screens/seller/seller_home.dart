@@ -69,6 +69,19 @@ class _SellerHomeState extends State<SellerHome> {
         .then((_) => _reload());
   }
 
+  /// 업무 대분류 섹션 헤더.
+  Widget _sectionTitle(String text) => Padding(
+        padding: const EdgeInsets.fromLTRB(4, 14, 4, 10),
+        child: Row(children: [
+          Container(width: 3, height: 14, decoration: BoxDecoration(
+              color: AppColors.accent, borderRadius: BorderRadius.circular(2))),
+          const SizedBox(width: 8),
+          Text(text,
+              style: const TextStyle(
+                  fontSize: 14, fontWeight: FontWeight.w800, color: AppColors.ink)),
+        ]),
+      );
+
   @override
   Widget build(BuildContext context) {
     return RefreshIndicator(
@@ -146,7 +159,10 @@ class _SellerHomeState extends State<SellerHome> {
               );
             },
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 12),
+
+          // ── 발주·주문 처리 ──
+          _sectionTitle('발주·주문 처리'),
           _NavCard(
             icon: Icons.inbox_outlined,
             title: '받은 발주',
@@ -161,6 +177,27 @@ class _SellerHomeState extends State<SellerHome> {
             onTap: () => _go(SellerSalesOrdersScreen(
                 repository: widget.repository, onChanged: widget.onChanged)),
           ),
+          FutureBuilder<SellerDashboard>(
+            future: _future,
+            builder: (context, snap) => _NavCard(
+              icon: Icons.published_with_changes_outlined,
+              title: '주문 변경 반영',
+              sub: '매장 발주 수정/취소 확인',
+              badge: snap.data?.pendingChanges ?? 0,
+              onTap: () => _go(OrderChangesScreen(
+                  repository: widget.repository, onChanged: _reload)),
+            ),
+          ),
+          if (widget.roleLabel == '본사')
+            _NavCard(
+              icon: Icons.inventory_outlined,
+              title: '공급사 발주 현황',
+              sub: '공급사별 발주 모아보기',
+              onTap: () => _go(SupplierOrdersScreen(repository: widget.repository)),
+            ),
+
+          // ── 출고·배송 ──
+          _sectionTitle('출고·배송'),
           _NavCard(
             icon: Icons.local_shipping_outlined,
             title: '출고',
@@ -174,28 +211,14 @@ class _SellerHomeState extends State<SellerHome> {
             sub: '확정 판매주문 → 출고 만들기',
             onTap: () => _go(CreateShipmentScreen(repository: widget.repository)),
           ),
-          FutureBuilder<SellerDashboard>(
-            future: _future,
-            builder: (context, snap) => _NavCard(
-              icon: Icons.published_with_changes_outlined,
-              title: '주문 변경 반영',
-              sub: '매장 발주 수정/취소 확인',
-              badge: snap.data?.pendingChanges ?? 0,
-              onTap: () => _go(OrderChangesScreen(
-                  repository: widget.repository, onChanged: _reload)),
-            ),
-          ),
+
+          // ── 정산·전자문서 ──
+          _sectionTitle('정산·전자문서'),
           _NavCard(
             icon: Icons.bar_chart_outlined,
             title: '매출 현황',
             sub: '기간별·매장별 매출',
             onTap: () => _go(SalesScreen(repository: widget.repository)),
-          ),
-          _NavCard(
-            icon: Icons.category_outlined,
-            title: '상품 관리',
-            sub: widget.roleLabel == '본사' ? '품목 등록·수정·승인' : '자사 물품 등록·수정',
-            onTap: () => _go(ProductsScreen(repository: widget.repository)),
           ),
           _NavCard(
             icon: Icons.description_outlined,
@@ -211,19 +234,26 @@ class _SellerHomeState extends State<SellerHome> {
             onTap: () => _go(SellerStatementsScreen(
                 repository: widget.repository, roleLabel: widget.roleLabel)),
           ),
-          if (widget.roleLabel == '본사') ...[
-            _NavCard(
-              icon: Icons.inventory_outlined,
-              title: '공급사 발주 현황',
-              sub: '공급사별 발주 모아보기',
-              onTap: () => _go(SupplierOrdersScreen(repository: widget.repository)),
-            ),
+
+          // ── 상품·기준정보 ──
+          _sectionTitle('상품·기준정보'),
+          _NavCard(
+            icon: Icons.category_outlined,
+            title: '상품 관리',
+            sub: widget.roleLabel == '본사' ? '품목 등록·수정·승인' : '자사 물품 등록·수정',
+            onTap: () => _go(ProductsScreen(repository: widget.repository)),
+          ),
+          if (widget.roleLabel == '본사')
             _NavCard(
               icon: Icons.folder_outlined,
               title: '카테고리 관리',
               sub: '품목 대분류 관리',
               onTap: () => _go(CategoriesScreen(repository: widget.repository)),
             ),
+
+          // ── 거래처·운영 (본사) ──
+          if (widget.roleLabel == '본사') ...[
+            _sectionTitle('거래처·운영'),
             _NavCard(
               icon: Icons.handshake_outlined,
               title: '공급처 관리',
@@ -249,7 +279,7 @@ class _SellerHomeState extends State<SellerHome> {
               onTap: () => _go(InquiriesScreen(repository: widget.repository)),
             ),
           ],
-          const SizedBox(height: 12),
+          const SizedBox(height: 16),
           FutureBuilder<SellerDashboard>(
             future: _future,
             builder: (context, snap) {
