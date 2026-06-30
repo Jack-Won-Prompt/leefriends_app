@@ -103,8 +103,9 @@ class StoreOpsRepository {
 
   // ---- 알림 ----
   Future<({List<AppNotificationItem> items, int unread, bool hasMore})> notifications(
-      {int page = 1}) async {
-    final body = await _get('/notifications?page=$page');
+      {int page = 1, bool unreadOnly = false}) async {
+    final body = await _get(
+        '/notifications?page=$page${unreadOnly ? '&unread=1' : ''}');
     final items = (body['data'] as List)
         .map((e) => AppNotificationItem.fromJson(e as Map<String, dynamic>))
         .toList();

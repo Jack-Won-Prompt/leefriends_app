@@ -58,7 +58,8 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         emptyText: '알림이 없습니다',
         emptyIcon: Icons.notifications_none,
         fetch: (page) async {
-          final r = await widget.repository.notifications(page: page);
+          // 읽지 않은 알림만 표시 — 읽으면 목록에서 사라짐
+          final r = await widget.repository.notifications(page: page, unreadOnly: true);
           return Paged(items: r.items, hasMore: r.hasMore);
         },
         itemBuilder: (context, item) => _Tile(item: item, onTap: () => _open(item)),
