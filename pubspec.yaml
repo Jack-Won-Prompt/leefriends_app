@@ -2,7 +2,7 @@ name: leefriends
 description: "LEEFRIENDS · 프리미엄 망고빙수 전문점 모바일 앱"
 publish_to: 'none'
 
-version: 1.0.3+12
+version: 1.0.4+13
 
 environment:
   sdk: ^3.12.0
@@ -26,6 +26,16 @@ dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^6.0.0
+  flutter_launcher_icons: ^0.14.4
+
+# 앱 아이콘 생성 (dart run flutter_launcher_icons)
+# iOS는 알파 제거(흰 배경 평탄화)로 App Store 요건 충족.
+flutter_launcher_icons:
+  android: true
+  ios: true
+  remove_alpha_ios: true
+  background_color_ios: "#ffffff"
+  image_path: "leefriends_icon_1024.png"
 
 flutter:
   uses-material-design: true
