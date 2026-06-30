@@ -57,8 +57,13 @@ workflows:
     publishing:
       app_store_connect:
         auth: integration
-        submit_to_testflight: true
-        # 정식 스토어 심사까지 자동 제출하려면 아래 주석 해제
+        # 업로드만 수행 → 내부 테스트(Internal Testing)는 즉시 가능.
+        # 외부 테스터 베타심사 자동제출은 TestFlight 테스트 정보(피드백 이메일·심사 연락처)
+        # 입력 후 아래 두 줄을 활성화. 그 전엔 켜면 'test information required' 로 실패함.
+        # submit_to_testflight: true
+        # beta_groups:
+        #   - External Testers
+        # 정식 스토어 심사까지 자동 제출하려면:
         # submit_to_app_store: false
 
   # (선택) 안드로이드도 클라우드에서 AAB 빌드하고 싶을 때
