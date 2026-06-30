@@ -33,10 +33,14 @@ workflows:
         # 이어서 프로파일을 생성/가져온 뒤 키체인에 인증서를 등록한다.
         # App Store Connect 통합이 API 키 인증을 자동 주입함.
         script: |
+          set -e
           keychain initialize
-          # 배포 인증서 생성(개인키 포함). 이미 있으면 생성 생략하고 계속.
-          app-store-connect create-certificate --type IOS_DISTRIBUTION --save \
-            || echo "배포 인증서 생성 생략(기존 인증서 존재 가능)"
+          # 새 개인키로 배포 인증서를 생성·저장(키체인 등록에 필요한 개인키 확보).
+          # 실패하면 그대로 멈춰 원인을 로그에 노출.
+          app-store-connect create-certificate \
+            --type IOS_DISTRIBUTION \
+            --save
+          # App Store 프로비저닝 프로파일 생성/가져오기
           app-store-connect fetch-signing-files "com.leefriends.leefriends" \
             --type IOS_APP_STORE \
             --create
