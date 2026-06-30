@@ -20,9 +20,6 @@ workflows:
     integrations:
       app_store_connect: CodemagicAppStoreKey
     environment:
-      ios_signing:
-        distribution_type: app_store
-        bundle_identifier: com.leefriends.leefriends
       groups:
         - appstore           # APP_STORE_APPLE_ID 등
       flutter: stable
@@ -31,11 +28,19 @@ workflows:
     scripts:
       - name: Flutter 패키지 설치
         script: flutter pub get
+      - name: 코드서명 인증서·프로파일 자동 생성/가져오기
+        # 신규 앱이라 배포 인증서/프로파일이 없으므로 --create 로 자동 생성.
+        # App Store Connect 통합이 API 키 인증을 자동 주입함.
+        script: |
+          keychain initialize
+          app-store-connect fetch-signing-files "com.leefriends.leefriends" \
+            --type IOS_APP_STORE \
+            --create
+          keychain add-certificates
+          xcode-project use-profiles
       - name: CocoaPods 설치
         script: |
           find . -name "Podfile" -execdir pod install \;
-      - name: 코드서명 프로파일 적용
-        script: xcode-project use-profiles
       - name: iOS IPA 빌드
         # build-name 은 pubspec.yaml 의 version(현재 1.0.3)을 자동 사용.
         # build-number 만 TestFlight 최신값 + 1 로 자동 증가시켜 충돌 방지.
