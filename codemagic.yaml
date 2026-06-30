@@ -29,20 +29,15 @@ workflows:
       - name: Flutter 패키지 설치
         script: flutter pub get
       - name: 코드서명 인증서·프로파일 자동 생성/가져오기
-        # 신규 계정이라 배포 인증서가 없으므로 먼저 인증서를 생성(개인키 포함 저장),
-        # 이어서 프로파일을 생성/가져온 뒤 키체인에 인증서를 등록한다.
+        # CERTIFICATE_PRIVATE_KEY(우리가 보유한 개인키)로 배포 인증서를 생성/재사용.
+        # 같은 키를 매 빌드 쓰므로 첫 빌드만 인증서를 만들고 이후엔 재사용 → 한도 미소모.
         # App Store Connect 통합이 API 키 인증을 자동 주입함.
         script: |
           set -e
           keychain initialize
-          # 새 개인키로 배포 인증서를 생성·저장(키체인 등록에 필요한 개인키 확보).
-          # 실패하면 그대로 멈춰 원인을 로그에 노출.
-          app-store-connect create-certificate \
-            --type IOS_DISTRIBUTION \
-            --save
-          # App Store 프로비저닝 프로파일 생성/가져오기
           app-store-connect fetch-signing-files "com.leefriends.leefriends" \
             --type IOS_APP_STORE \
+            --certificate-key=@env:CERTIFICATE_PRIVATE_KEY \
             --create
           keychain add-certificates
           xcode-project use-profiles
