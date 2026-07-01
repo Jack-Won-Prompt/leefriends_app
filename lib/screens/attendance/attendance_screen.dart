@@ -309,33 +309,42 @@ class _LeaveTabState extends State<_LeaveTab> {
   @override
   Widget build(BuildContext context) {
     final bottom = 24 + MediaQuery.of(context).padding.bottom;
-    return Scaffold(
-      backgroundColor: AppColors.cream,
-      floatingActionButton: FloatingActionButton.extended(
-        backgroundColor: AppColors.accent,
-        onPressed: _requestLeave,
-        icon: const Icon(Icons.add),
-        label: const Text('휴무 신청'),
-      ),
-      body: FutureBuilder<({bool isPartTime, List<LeaveRecord> leaves})>(
-        future: _future,
-        builder: (context, snap) {
-          if (snap.connectionState == ConnectionState.waiting && !snap.hasData) {
-            return const Center(child: CircularProgressIndicator(color: AppColors.accent));
-          }
-          if (snap.hasError) {
-            return _ErrorView(msg: _msg(snap.error!), onRetry: _reload);
-          }
-          final leaves = snap.data!.leaves;
-          if (leaves.isEmpty) {
-            return const Center(child: Text('신청한 휴무가 없습니다', style: TextStyle(color: AppColors.inkSoft)));
-          }
-          return ListView(
-            padding: EdgeInsets.fromLTRB(16, 16, 16, bottom + 60),
-            children: [for (final l in leaves) _leaveTile(l)],
-          );
-        },
-      ),
+    return FutureBuilder<({bool isPartTime, List<LeaveRecord> leaves})>(
+      future: _future,
+      builder: (context, snap) {
+        return RefreshIndicator(
+          color: AppColors.accent,
+          onRefresh: () async => _reload(),
+          child: ListView(
+            padding: EdgeInsets.fromLTRB(16, 16, 16, bottom),
+            children: [
+              // 상단 휴무 신청 버튼 (FAB 대신 — 하단 시스템바 가림 방지)
+              SizedBox(
+                width: double.infinity,
+                child: FilledButton.icon(
+                  onPressed: _requestLeave,
+                  style: FilledButton.styleFrom(minimumSize: const Size.fromHeight(50)),
+                  icon: const Icon(Icons.add),
+                  label: const Text('휴무 신청'),
+                ),
+              ),
+              const SizedBox(height: 14),
+              if (snap.connectionState == ConnectionState.waiting && !snap.hasData)
+                const Padding(
+                    padding: EdgeInsets.only(top: 60),
+                    child: Center(child: CircularProgressIndicator(color: AppColors.accent)))
+              else if (snap.hasError)
+                _ErrorView(msg: _msg(snap.error!), onRetry: _reload)
+              else if ((snap.data?.leaves ?? const []).isEmpty)
+                const Padding(
+                    padding: EdgeInsets.only(top: 40),
+                    child: Center(child: Text('신청한 휴무가 없습니다', style: TextStyle(color: AppColors.inkSoft))))
+              else
+                for (final l in snap.data!.leaves) _leaveTile(l),
+            ],
+          ),
+        );
+      },
     );
   }
 
@@ -422,12 +431,13 @@ class _LeaveEditorState extends State<_LeaveEditor> {
   @override
   Widget build(BuildContext context) {
     final inset = MediaQuery.of(context).viewInsets.bottom;
+    final safe = MediaQuery.of(context).viewPadding.bottom;
     return Padding(
       padding: EdgeInsets.only(bottom: inset),
       child: Container(
         decoration: const BoxDecoration(
             color: AppColors.surface, borderRadius: BorderRadius.vertical(top: Radius.circular(22))),
-        padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
+        padding: EdgeInsets.fromLTRB(20, 16, 20, 24 + safe),
         child: SingleChildScrollView(
           child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
             const Center(child: Text('휴무 신청', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800))),
@@ -953,12 +963,13 @@ class _AttendanceEditorState extends State<_AttendanceEditor> {
   @override
   Widget build(BuildContext context) {
     final inset = MediaQuery.of(context).viewInsets.bottom;
+    final safe = MediaQuery.of(context).viewPadding.bottom;
     return Padding(
       padding: EdgeInsets.only(bottom: inset),
       child: Container(
         decoration: const BoxDecoration(
             color: AppColors.surface, borderRadius: BorderRadius.vertical(top: Radius.circular(22))),
-        padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
+        padding: EdgeInsets.fromLTRB(20, 16, 20, 24 + safe),
         child: SingleChildScrollView(
           child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
           Center(child: Text(widget.title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800))),

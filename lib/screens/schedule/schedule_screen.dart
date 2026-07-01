@@ -455,6 +455,7 @@ class _ScheduleEditorState extends State<_ScheduleEditor> {
   @override
   Widget build(BuildContext context) {
     final inset = MediaQuery.of(context).viewInsets.bottom;
+    final safe = MediaQuery.of(context).viewPadding.bottom;
     return Padding(
       padding: EdgeInsets.only(bottom: inset),
       child: Container(
@@ -462,7 +463,7 @@ class _ScheduleEditorState extends State<_ScheduleEditor> {
           color: AppColors.surface,
           borderRadius: BorderRadius.vertical(top: Radius.circular(22)),
         ),
-        padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
+        padding: EdgeInsets.fromLTRB(20, 16, 20, 24 + safe),
         child: SingleChildScrollView(
           child: Column(
           mainAxisSize: MainAxisSize.min,
