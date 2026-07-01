@@ -26,6 +26,7 @@ class StoreHome extends StatefulWidget {
     required this.onNotifications,
     required this.onChat,
     required this.onLogout,
+    this.onSchedule,
   });
 
   final String storeName;
@@ -36,6 +37,7 @@ class StoreHome extends StatefulWidget {
   final VoidCallback onNotifications;
   final VoidCallback onChat;
   final VoidCallback onLogout;
+  final VoidCallback? onSchedule;
 
   @override
   State<StoreHome> createState() => _StoreHomeState();
@@ -97,6 +99,7 @@ class _StoreHomeState extends State<StoreHome> {
             unread: widget.unread,
             onNotifications: widget.onNotifications,
             onChat: widget.onChat,
+            onSchedule: widget.onSchedule,
             onLogout: widget.onLogout,
           ),
           Expanded(

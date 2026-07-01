@@ -34,6 +34,7 @@ class SellerHome extends StatefulWidget {
     this.onChat,
     this.onLogout,
     this.onChanged,
+    this.onSchedule,
   });
 
   final SellerRepository repository;
@@ -44,6 +45,7 @@ class SellerHome extends StatefulWidget {
   final VoidCallback? onChat;
   final VoidCallback? onLogout;
   final VoidCallback? onChanged;
+  final VoidCallback? onSchedule;
 
   @override
   State<SellerHome> createState() => _SellerHomeState();
@@ -135,6 +137,7 @@ class _SellerHomeState extends State<SellerHome> {
             unread: widget.unread,
             onNotifications: widget.onNotifications ?? () {},
             onChat: widget.onChat ?? () {},
+            onSchedule: widget.onSchedule,
             onLogout: widget.onLogout ?? () {},
           ),
           Expanded(

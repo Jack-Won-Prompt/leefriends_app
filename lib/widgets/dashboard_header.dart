@@ -14,6 +14,7 @@ class DashboardHeader extends StatelessWidget {
     required this.onNotifications,
     required this.onChat,
     required this.onLogout,
+    this.onSchedule,
   });
 
   final String greeting;
@@ -23,6 +24,7 @@ class DashboardHeader extends StatelessWidget {
   final VoidCallback onNotifications;
   final VoidCallback onChat;
   final VoidCallback onLogout;
+  final VoidCallback? onSchedule;
 
   @override
   Widget build(BuildContext context) {
@@ -65,6 +67,8 @@ class DashboardHeader extends StatelessWidget {
               ),
             ),
           ),
+          if (onSchedule != null)
+            _IconBtn(icon: Icons.calendar_month_outlined, onTap: onSchedule!),
           _IconBtn(icon: Icons.forum_outlined, onTap: onChat),
           _NotifBtn(unread: unread, onTap: onNotifications),
           _IconBtn(icon: Icons.logout_rounded, onTap: onLogout),

@@ -4,10 +4,12 @@ import '../../data/auth_controller.dart';
 import '../../data/cart_controller.dart';
 import '../../data/chat_repository.dart';
 import '../../data/order_repository.dart';
+import '../../data/schedule_repository.dart';
 import '../../data/seller_repository.dart';
 import '../../data/store_ops_repository.dart';
 import '../../theme/app_colors.dart';
 import '../chat/chat_list_screen.dart';
+import '../schedule/schedule_screen.dart';
 import '../seller/seller_home.dart';
 import '../store/notifications_screen.dart';
 import '../store/store_home.dart';
@@ -32,6 +34,7 @@ class _OrderHubState extends State<OrderHub> {
   late final StoreOpsRepository _ops = StoreOpsRepository(auth: widget.auth);
   late final SellerRepository _seller = SellerRepository(auth: widget.auth);
   late final ChatRepository _chat = ChatRepository(auth: widget.auth);
+  late final ScheduleRepository _schedule = ScheduleRepository(auth: widget.auth);
 
   int _unread = 0;
   bool _unreadRequested = false;
@@ -50,6 +53,10 @@ class _OrderHubState extends State<OrderHub> {
 
   void _openChat() => Navigator.of(context).push(MaterialPageRoute(
         builder: (_) => ChatListScreen(repository: _chat),
+      ));
+
+  void _openSchedule() => Navigator.of(context).push(MaterialPageRoute(
+        builder: (_) => ScheduleScreen(repository: _schedule),
       ));
 
   @override
@@ -86,6 +93,7 @@ class _OrderHubState extends State<OrderHub> {
                 unread: _unread,
                 onNotifications: _openNotifications,
                 onChat: _openChat,
+                onSchedule: _openSchedule,
                 onLogout: () => _confirmLogout(auth),
               )
             : SellerHome(
@@ -95,6 +103,7 @@ class _OrderHubState extends State<OrderHub> {
                 unread: _unread,
                 onNotifications: _openNotifications,
                 onChat: _openChat,
+                onSchedule: _openSchedule,
                 onLogout: () => _confirmLogout(auth),
                 onChanged: _refreshUnread,
               );
