@@ -191,6 +191,8 @@ class SellerOrder {
   final int shippingUnitPrice;
   final int shippingFee;
   final int orderTotal;
+  final bool paid;
+  final String? paidAt;
   final List<FulfillItem> items;
 
   const SellerOrder({
@@ -214,6 +216,8 @@ class SellerOrder {
     this.shippingUnitPrice = 0,
     this.shippingFee = 0,
     int? orderTotal,
+    this.paid = false,
+    this.paidAt,
     required this.items,
   }) : orderTotal = orderTotal ?? storeAmount;
 
@@ -238,6 +242,8 @@ class SellerOrder {
         shippingUnitPrice: _i(j['shipping_unit_price']),
         shippingFee: _i(j['shipping_fee']),
         orderTotal: j['order_total'] != null ? _i(j['order_total']) : null,
+        paid: j['paid'] as bool? ?? false,
+        paidAt: j['paid_at'] as String?,
         items: (j['items'] as List? ?? [])
             .map((e) => FulfillItem.fromJson(e as Map<String, dynamic>))
             .toList(),

@@ -6,6 +6,7 @@ import '../../models/order.dart';
 import '../../theme/app_colors.dart';
 import 'cart_screen.dart';
 import 'order_statement_screen.dart';
+import '../seller/seller_widgets.dart' show PaidBadge;
 import 'status_chip.dart';
 
 class OrderDetailScreen extends StatefulWidget {
@@ -205,6 +206,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
                           fontSize: 17, fontWeight: FontWeight.w800)),
                   const Spacer(),
                   StatusChip(status: order.status, label: order.statusLabel),
+                  if (order.paid) const PaidBadge(compact: true),
                 ],
               ),
               if (order.createdAt != null) ...[

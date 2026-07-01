@@ -61,6 +61,8 @@ class OrderModel {
   final String? note;
   final bool editable;
   final bool isSample;
+  final bool paid;
+  final String? paidAt;
   final List<OrderItemView> items;
 
   const OrderModel({
@@ -74,6 +76,8 @@ class OrderModel {
     required this.note,
     required this.editable,
     required this.isSample,
+    this.paid = false,
+    this.paidAt,
     required this.items,
   });
 
@@ -94,6 +98,8 @@ class OrderModel {
         note: j['note'] as String?,
         editable: j['editable'] as bool? ?? false,
         isSample: j['is_sample'] as bool? ?? false,
+        paid: j['paid'] as bool? ?? false,
+        paidAt: j['paid_at'] as String?,
         items: (j['items'] as List? ?? [])
             .map((e) => OrderItemView.fromJson(e as Map<String, dynamic>))
             .toList(),

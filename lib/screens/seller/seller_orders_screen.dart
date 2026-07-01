@@ -86,6 +86,7 @@ class _Tile extends StatelessWidget {
                     style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w800)),
               ),
               FulfillStatusChip(status: order.status, label: order.statusLabel),
+              if (order.paid) const PaidBadge(),
             ]),
             const SizedBox(height: 8),
             Row(children: [
@@ -156,6 +157,7 @@ class _SellerOrderDetailScreenState extends State<SellerOrderDetailScreen> {
                           style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800)),
                       const Spacer(),
                       FulfillStatusChip(status: o.status, label: o.statusLabel),
+                      if (o.paid) const PaidBadge(compact: true),
                     ]),
                     const SizedBox(height: 6),
                     Text('${o.storeName ?? ''} · ${o.itemCount}품목 · ${o.createdAt ?? ''}',

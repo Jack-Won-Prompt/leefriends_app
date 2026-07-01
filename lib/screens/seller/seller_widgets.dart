@@ -3,6 +3,31 @@ import 'package:flutter/material.dart';
 import '../../models/fulfillment.dart';
 import '../../theme/app_colors.dart';
 
+/// 입금완료 배지 — 계좌 대사(order.paid_at)로 입금 확인된 주문에 표시.
+class PaidBadge extends StatelessWidget {
+  const PaidBadge({super.key, this.compact = false});
+  final bool compact;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.only(left: 6),
+      padding: EdgeInsets.symmetric(horizontal: compact ? 8 : 10, vertical: 5),
+      decoration: BoxDecoration(
+        color: const Color(0xFFE7F6EC),
+        borderRadius: BorderRadius.circular(100),
+      ),
+      child: Row(mainAxisSize: MainAxisSize.min, children: [
+        const Icon(Icons.check_circle, size: 13, color: Color(0xFF1E8E4E)),
+        const SizedBox(width: 3),
+        Text('입금완료',
+            style: const TextStyle(
+                color: Color(0xFF1E8E4E), fontSize: 12, fontWeight: FontWeight.w700)),
+      ]),
+    );
+  }
+}
+
 /// 판매자 도메인 공통 상태 칩 (판매주문/출고/발주 상태 색상).
 class FulfillStatusChip extends StatelessWidget {
   const FulfillStatusChip({super.key, required this.status, required this.label});

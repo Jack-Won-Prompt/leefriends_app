@@ -5,6 +5,7 @@ import '../../models/order.dart';
 import '../../models/paged.dart';
 import '../../theme/app_colors.dart';
 import '../../widgets/paged_list_view.dart';
+import '../seller/seller_widgets.dart' show PaidBadge;
 import 'order_detail_screen.dart';
 import 'status_chip.dart';
 
@@ -137,6 +138,7 @@ class _OrderTile extends StatelessWidget {
                 ],
                 const Spacer(),
                 StatusChip(status: order.status, label: order.statusLabel),
+                if (order.paid) const PaidBadge(compact: true),
               ],
             ),
             const SizedBox(height: 8),
