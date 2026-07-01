@@ -3,11 +3,13 @@ import 'package:flutter/material.dart';
 import '../../data/auth_controller.dart';
 import '../../data/cart_controller.dart';
 import '../../data/chat_repository.dart';
+import '../../data/attendance_repository.dart';
 import '../../data/order_repository.dart';
 import '../../data/schedule_repository.dart';
 import '../../data/seller_repository.dart';
 import '../../data/store_ops_repository.dart';
 import '../../theme/app_colors.dart';
+import '../attendance/attendance_screen.dart';
 import '../chat/chat_list_screen.dart';
 import '../schedule/schedule_screen.dart';
 import '../seller/seller_home.dart';
@@ -35,6 +37,7 @@ class _OrderHubState extends State<OrderHub> {
   late final SellerRepository _seller = SellerRepository(auth: widget.auth);
   late final ChatRepository _chat = ChatRepository(auth: widget.auth);
   late final ScheduleRepository _schedule = ScheduleRepository(auth: widget.auth);
+  late final AttendanceRepository _attendance = AttendanceRepository(auth: widget.auth);
 
   int _unread = 0;
   bool _unreadRequested = false;
@@ -57,6 +60,10 @@ class _OrderHubState extends State<OrderHub> {
 
   void _openSchedule() => Navigator.of(context).push(MaterialPageRoute(
         builder: (_) => ScheduleScreen(repository: _schedule),
+      ));
+
+  void _openAttendance(bool isPartTime) => Navigator.of(context).push(MaterialPageRoute(
+        builder: (_) => AttendanceScreen(repository: _attendance, isPartTime: isPartTime),
       ));
 
   @override
@@ -94,6 +101,7 @@ class _OrderHubState extends State<OrderHub> {
                 onNotifications: _openNotifications,
                 onChat: _openChat,
                 onSchedule: _openSchedule,
+                onAttendance: () => _openAttendance(user.isPartTime),
                 onLogout: () => _confirmLogout(auth),
               )
             : SellerHome(
@@ -104,6 +112,7 @@ class _OrderHubState extends State<OrderHub> {
                 onNotifications: _openNotifications,
                 onChat: _openChat,
                 onSchedule: _openSchedule,
+                onAttendance: () => _openAttendance(user.isPartTime),
                 onLogout: () => _confirmLogout(auth),
                 onChanged: _refreshUnread,
               );

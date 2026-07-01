@@ -38,6 +38,7 @@ class SellerHome extends StatefulWidget {
     this.onLogout,
     this.onChanged,
     this.onSchedule,
+    this.onAttendance,
   });
 
   final SellerRepository repository;
@@ -49,6 +50,7 @@ class SellerHome extends StatefulWidget {
   final VoidCallback? onLogout;
   final VoidCallback? onChanged;
   final VoidCallback? onSchedule;
+  final VoidCallback? onAttendance;
 
   @override
   State<SellerHome> createState() => _SellerHomeState();
@@ -272,6 +274,13 @@ class _SellerHomeState extends State<SellerHome> {
             title: '공급사 발주 현황',
             sub: '공급사별 발주 모아보기',
             onTap: () => _go(SupplierOrdersScreen(repository: widget.repository)),
+          ),
+        if (widget.onAttendance != null)
+          _NavCard(
+            icon: Icons.how_to_reg_outlined,
+            title: '근태관리',
+            sub: '출퇴근·휴무 승인 / 급여',
+            onTap: widget.onAttendance!,
           ),
         const SizedBox(height: 8),
         FutureBuilder<SellerDashboard>(

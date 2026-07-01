@@ -7,6 +7,9 @@ class AuthUser {
   final String roleLabel;
   final int? storeId;
   final String? storeName;
+  final String employmentType; // regular | part_time
+  final bool isPartTime;
+  final int hourlyWage;
 
   const AuthUser({
     required this.id,
@@ -16,6 +19,9 @@ class AuthUser {
     required this.roleLabel,
     required this.storeId,
     required this.storeName,
+    this.employmentType = 'regular',
+    this.isPartTime = false,
+    this.hourlyWage = 0,
   });
 
   bool get isStore => role == 'store' && storeId != null;
@@ -28,5 +34,8 @@ class AuthUser {
         roleLabel: j['role_label'] as String? ?? '',
         storeId: j['store_id'] as int?,
         storeName: j['store_name'] as String?,
+        employmentType: j['employment_type'] as String? ?? 'regular',
+        isPartTime: j['is_part_time'] as bool? ?? false,
+        hourlyWage: (j['hourly_wage'] as num?)?.toInt() ?? 0,
       );
 }

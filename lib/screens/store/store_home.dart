@@ -27,6 +27,7 @@ class StoreHome extends StatefulWidget {
     required this.onChat,
     required this.onLogout,
     this.onSchedule,
+    this.onAttendance,
   });
 
   final String storeName;
@@ -38,6 +39,7 @@ class StoreHome extends StatefulWidget {
   final VoidCallback onChat;
   final VoidCallback onLogout;
   final VoidCallback? onSchedule;
+  final VoidCallback? onAttendance;
 
   @override
   State<StoreHome> createState() => _StoreHomeState();
@@ -209,6 +211,15 @@ class _StoreHomeState extends State<StoreHome> {
           onTap: () => _push(
               context, CatalogScreen(repository: widget.order, cart: widget.cart)),
         ),
+        if (widget.onAttendance != null) ...[
+          const SizedBox(height: 12),
+          _FlatAction(
+            icon: Icons.how_to_reg_outlined,
+            title: '근태관리',
+            sub: '출퇴근 · 휴무 · 급여',
+            onTap: widget.onAttendance!,
+          ),
+        ],
       ]);
 
   // ── 발주·매입 ──
@@ -390,6 +401,56 @@ class _PrimaryCta extends StatelessWidget {
               const Icon(Icons.arrow_forward_rounded, color: Colors.white),
             ],
           ),
+        ),
+      ),
+    );
+  }
+}
+
+/// 홈 탭 전체폭 액션 카드 (근태 등).
+class _FlatAction extends StatelessWidget {
+  const _FlatAction(
+      {required this.icon, required this.title, required this.sub, required this.onTap});
+  final IconData icon;
+  final String title;
+  final String sub;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: AppColors.surface,
+      borderRadius: BorderRadius.circular(18),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(18),
+        child: Ink(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(color: AppColors.line),
+          ),
+          child: Row(children: [
+            Container(
+              width: 44,
+              height: 44,
+              decoration: BoxDecoration(
+                  color: AppColors.mango100, borderRadius: BorderRadius.circular(12)),
+              alignment: Alignment.center,
+              child: Icon(icon, color: AppColors.mango700, size: 22),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Text(title,
+                    style: const TextStyle(
+                        fontSize: 15, fontWeight: FontWeight.w800, color: AppColors.ink)),
+                const SizedBox(height: 2),
+                Text(sub, style: const TextStyle(fontSize: 12, color: AppColors.inkSoft)),
+              ]),
+            ),
+            const Icon(Icons.chevron_right, color: AppColors.inkSoft),
+          ]),
         ),
       ),
     );
