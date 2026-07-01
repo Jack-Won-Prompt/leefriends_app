@@ -89,6 +89,12 @@ class SellerRepository {
     return body['message'] as String? ?? '거래명세서를 전송했습니다.';
   }
 
+  // 매장에 입금요청 SMS 전송 + 주문 접수 처리 (본사)
+  Future<String> sendPaymentRequestSms(int orderId) async {
+    final body = await _post('/seller/orders/$orderId/payment-request', {});
+    return body['message'] as String? ?? '입금요청 SMS를 전송했습니다.';
+  }
+
   // 품목 공급가/출고가/수량 수정 (본사)
   Future<String> editOrderItem(
       int orderId, int itemId, int supplyUnitPrice, int storeUnitPrice, int qty) async {

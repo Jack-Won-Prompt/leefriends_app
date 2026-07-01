@@ -218,6 +218,18 @@ class _SellerOrderDetailScreenState extends State<SellerOrderDetailScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
+          // 입금요청 SMS (매장 전화번호로)
+          OutlinedButton.icon(
+            onPressed: _busy ? null : () => _sendPaymentRequest(o),
+            style: OutlinedButton.styleFrom(
+              foregroundColor: const Color(0xFF1E8E4E),
+              side: const BorderSide(color: Color(0xFFA7DCB9)),
+              minimumSize: const Size.fromHeight(50),
+            ),
+            icon: const Icon(Icons.sms_outlined, size: 18),
+            label: const Text('입금요청 SMS 보내기'),
+          ),
+          const SizedBox(height: 10),
           // 택배비 등록/수정
           OutlinedButton.icon(
             onPressed: _busy ? null : () => _setShipping(o),
@@ -278,6 +290,23 @@ class _SellerOrderDetailScreenState extends State<SellerOrderDetailScreen> {
         ],
       ),
     );
+  }
+
+  Future<void> _sendPaymentRequest(SellerOrder o) async {
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('입금요청 SMS'),
+        content: Text(
+            '${o.storeName ?? '매장'}에 입금계좌·발주금액을 담은 입금요청 문자를 전송하고 주문을 접수 상태로 변경합니다.\n매장 전화번호가 등록돼 있어야 합니다. 진행할까요?'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('닫기')),
+          FilledButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('전송')),
+        ],
+      ),
+    );
+    if (ok != true) return;
+    await _runAction(() => widget.repository.sendPaymentRequestSms(o.id));
   }
 
   Future<void> _issueTaxInvoice(SellerOrder o) async {
