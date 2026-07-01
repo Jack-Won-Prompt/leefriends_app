@@ -202,7 +202,8 @@ class _SellerOrderDetailScreenState extends State<SellerOrderDetailScreen> {
                 child: Text('품목', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w800)),
               ),
               for (final it in o.items) _itemTile(o, it),
-              if (widget.isHq && !o.isSample) _hqActions(o),
+              // 취소된 주문은 택배비·세금계산서·거래명세서 액션 숨김
+              if (widget.isHq && !o.isSample && o.status != 'canceled') _hqActions(o),
             ],
           );
         },
