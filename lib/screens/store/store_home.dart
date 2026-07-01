@@ -56,7 +56,7 @@ class _StoreHomeState extends State<StoreHome> {
   }
 
   Future<void> _refresh() async {
-    setState(() => _dash = widget.ops.dashboard());
+    setState(() { _dash = widget.ops.dashboard(); });
     await _dash;
   }
 

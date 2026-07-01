@@ -40,7 +40,7 @@ class _BankDepositScreenState extends State<BankDepositScreen> {
   }
 
   void _reload() {
-    setState(() => _future = widget.repository.bank(acc: _acc, jobId: _jobId));
+    setState(() { _future = widget.repository.bank(acc: _acc, jobId: _jobId); });
   }
 
   String _fmt(DateTime d) =>

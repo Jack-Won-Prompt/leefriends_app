@@ -29,8 +29,9 @@ class _StorePaymentsScreenState extends State<StorePaymentsScreen> {
   }
 
   void _reload() {
-    setState(() => _future =
-        widget.repository.storePayments(period: _period, year: _year, month: _month));
+    setState(() {
+      _future = widget.repository.storePayments(period: _period, year: _year, month: _month);
+    });
   }
 
   void _setPeriod(String p, {int? month}) {
@@ -270,8 +271,10 @@ class _StorePaymentDetailScreenState extends State<_StorePaymentDetailScreen> {
   }
 
   void _reload() {
-    setState(() => _future = widget.repository.storePaymentDetail(widget.storeId,
-        period: widget.period, year: widget.year, month: widget.month));
+    setState(() {
+      _future = widget.repository.storePaymentDetail(widget.storeId,
+          period: widget.period, year: widget.year, month: widget.month);
+    });
   }
 
   Future<void> _requestUnpaid() async {

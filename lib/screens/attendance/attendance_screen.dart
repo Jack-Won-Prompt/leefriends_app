@@ -79,7 +79,7 @@ class _ClockTabState extends State<_ClockTab> {
     _reload();
   }
 
-  void _reload() => setState(() => _future = widget.repository.myAttendance());
+  void _reload() => setState(() { _future = widget.repository.myAttendance(); });
 
   Future<void> _do(Future<String> Function() action) async {
     setState(() => _busy = true);
@@ -259,7 +259,7 @@ class _LeaveTabState extends State<_LeaveTab> {
     _reload();
   }
 
-  void _reload() => setState(() => _future = widget.repository.myLeaves());
+  void _reload() => setState(() { _future = widget.repository.myLeaves(); });
 
   @override
   Widget build(BuildContext context) {
@@ -436,7 +436,7 @@ class _ApprovalsTabState extends State<_ApprovalsTab> {
     _reload();
   }
 
-  void _reload() => setState(() => _future = widget.repository.approvals(status: _status));
+  void _reload() => setState(() { _future = widget.repository.approvals(status: _status); });
 
   Future<void> _do(Future<String> Function() action) async {
     setState(() => _busy = true);
@@ -642,7 +642,7 @@ class _WageTabState extends State<_WageTab> {
     _reload();
   }
 
-  void _reload() => setState(() => _future = widget.repository.wages(from: _fmt(_from), to: _fmt(_to)));
+  void _reload() => setState(() { _future = widget.repository.wages(from: _fmt(_from), to: _fmt(_to)); });
 
   Future<void> _pick(bool from) async {
     final p = await showDatePicker(
