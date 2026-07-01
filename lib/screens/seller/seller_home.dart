@@ -9,6 +9,7 @@ import 'bank_deposit_screen.dart';
 import 'categories_screen.dart';
 import 'create_shipment_screen.dart';
 import 'hometax_screen.dart';
+import 'store_payments_screen.dart';
 import 'inquiries_screen.dart';
 import 'notices_manage_screen.dart';
 import 'order_changes_screen.dart';
@@ -387,6 +388,13 @@ class _SellerHomeState extends State<SellerHome> {
             title: '계좌 입금확인',
             sub: '계좌내역 수집·입금 대사',
             onTap: () => _go(BankDepositScreen(repository: widget.repository)),
+          ),
+        if (_isHq)
+          _NavCard(
+            icon: Icons.savings_outlined,
+            title: '매장별 입금현황',
+            sub: '입금완료·미입금 집계·안내',
+            onTap: () => _go(StorePaymentsScreen(repository: widget.repository)),
           ),
       ]);
 

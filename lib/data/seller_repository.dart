@@ -7,6 +7,7 @@ import '../models/edocs.dart';
 import '../models/fulfillment.dart';
 import '../models/hometax.dart';
 import '../models/paged.dart';
+import '../models/store_payment.dart';
 import 'api_config.dart';
 import 'auth_controller.dart';
 import 'order_repository.dart' show OrderException;
@@ -189,6 +190,34 @@ class SellerRepository {
   Future<String> bankFlatRateUrl() async {
     final body = await _get('/seller/bank/flat-rate-url');
     return body['url'] as String? ?? '';
+  }
+
+  // ---- 매장별 입금현황 ----
+  String _pq({String period = 'all', int? year, int? month}) {
+    final p = <String>['period=$period'];
+    if (year != null) p.add('year=$year');
+    if (month != null && month >= 1 && month <= 12) p.add('month=$month');
+    return p.join('&');
+  }
+
+  Future<StorePaymentIndex> storePayments({String period = 'all', int? year, int? month}) async {
+    final body = await _get('/seller/store-payments?${_pq(period: period, year: year, month: month)}');
+    return StorePaymentIndex.fromJson(body);
+  }
+
+  Future<StorePaymentDetail> storePaymentDetail(int storeId,
+      {String period = 'all', int? year, int? month}) async {
+    final body =
+        await _get('/seller/store-payments/$storeId?${_pq(period: period, year: year, month: month)}');
+    return StorePaymentDetail.fromJson(body);
+  }
+
+  Future<String> storePaymentRequestUnpaid(int storeId,
+      {String period = 'all', int? year, int? month}) async {
+    final body = await _post(
+        '/seller/store-payments/$storeId/request-unpaid?${_pq(period: period, year: year, month: month)}',
+        {});
+    return body['message'] as String? ?? '미입금 안내 SMS를 전송했습니다.';
   }
 
   // 품목 공급가/출고가/수량 수정 (본사)
