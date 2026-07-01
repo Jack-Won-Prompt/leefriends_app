@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:http/http.dart' as http;
 
+import '../models/bank_deposit.dart';
 import '../models/edocs.dart';
 import '../models/fulfillment.dart';
 import '../models/hometax.dart';
@@ -135,6 +136,56 @@ class SellerRepository {
 
   Future<String> hometaxFlatRateUrl() async {
     final body = await _get('/seller/hometax/flat-rate-url');
+    return body['url'] as String? ?? '';
+  }
+
+  // ---- 본사 계좌 입금확인 (계좌조회 + 주문 대사) ----
+  Future<BankIndex> bank({String? acc, String? jobId}) async {
+    final params = <String>[];
+    if (acc != null) params.add('acc=${Uri.encodeComponent(acc)}');
+    if (jobId != null) params.add('job_id=$jobId');
+    final q = params.isEmpty ? '' : '?${params.join('&')}';
+    final body = await _get('/seller/bank$q');
+    return BankIndex.fromJson(body);
+  }
+
+  Future<String> bankRequest(
+      {required String acc, required String startDate, required String endDate}) async {
+    final body = await _post('/seller/bank/request',
+        {'acc': acc, 'start_date': startDate, 'end_date': endDate}, expect: 201);
+    return body['message'] as String? ?? '수집을 요청했습니다.';
+  }
+
+  // 은행 수집 상태 폴링 — 홈택스와 동일 형태({ok,state,label,done})라 재사용.
+  Future<HometaxJobState> bankJobState(int jobRowId) async {
+    final body = await _get('/seller/bank/jobs/$jobRowId/state');
+    return HometaxJobState.fromJson(body);
+  }
+
+  Future<String> bankMapDepositor(String depositorName, int storeId) async {
+    final body = await _post('/seller/bank/map',
+        {'depositor_name': depositorName, 'store_id': storeId});
+    return body['message'] as String? ?? '매핑을 저장했습니다.';
+  }
+
+  Future<String> bankMatch(int depositId, int orderId) async {
+    final body = await _post('/seller/bank/match',
+        {'deposit_id': depositId, 'order_id': orderId});
+    return body['message'] as String? ?? '대사했습니다.';
+  }
+
+  Future<String> bankUnmatch(int depositId) async {
+    final body = await _delete('/seller/bank/deposits/$depositId/match');
+    return body['message'] as String? ?? '대사를 해제했습니다.';
+  }
+
+  Future<String> bankAutoMatch(String? acc) async {
+    final body = await _post('/seller/bank/auto-match', acc != null ? {'acc': acc} : {});
+    return body['message'] as String? ?? '자동 대사를 처리했습니다.';
+  }
+
+  Future<String> bankFlatRateUrl() async {
+    final body = await _get('/seller/bank/flat-rate-url');
     return body['url'] as String? ?? '';
   }
 

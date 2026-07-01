@@ -5,6 +5,7 @@ import '../../models/fulfillment.dart';
 import '../../models/store_ops.dart' show won;
 import '../../theme/app_colors.dart';
 import '../../widgets/dashboard_header.dart';
+import 'bank_deposit_screen.dart';
 import 'categories_screen.dart';
 import 'create_shipment_screen.dart';
 import 'hometax_screen.dart';
@@ -379,6 +380,13 @@ class _SellerHomeState extends State<SellerHome> {
             title: '매출/매입 (홈택스)',
             sub: '홈택스 세금계산서 수집·조회',
             onTap: () => _go(HometaxScreen(repository: widget.repository)),
+          ),
+        if (_isHq)
+          _NavCard(
+            icon: Icons.account_balance_outlined,
+            title: '계좌 입금확인',
+            sub: '계좌내역 수집·입금 대사',
+            onTap: () => _go(BankDepositScreen(repository: widget.repository)),
           ),
       ]);
 
