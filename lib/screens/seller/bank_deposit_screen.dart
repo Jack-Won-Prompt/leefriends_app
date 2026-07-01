@@ -110,7 +110,7 @@ class _BankDepositScreenState extends State<BankDepositScreen> {
             _reload();
             _toast('수집 완료');
           } else {
-            final st = await widget.repository.bankJobState(latest.id);
+            final st = await widget.repository.bankJobState(latest.jobId);
             if (st.done) {
               t.cancel();
               setState(() => _jobId = latest.jobId);

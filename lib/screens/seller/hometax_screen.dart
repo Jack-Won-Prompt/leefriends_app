@@ -95,7 +95,7 @@ class _HometaxScreenState extends State<HometaxScreen> {
         _page = 1;
       });
       _reload();
-      _startPolling(job.id);
+      _startPolling(job.jobId);
     } catch (e) {
       _toast(_msg(e), error: true);
     } finally {
@@ -103,11 +103,11 @@ class _HometaxScreenState extends State<HometaxScreen> {
     }
   }
 
-  void _startPolling(int jobRowId) {
+  void _startPolling(String jobId) {
     _poll?.cancel();
     _poll = Timer.periodic(const Duration(seconds: 4), (t) async {
       try {
-        final st = await widget.repository.hometaxJobState(jobRowId);
+        final st = await widget.repository.hometaxJobState(jobId);
         if (!mounted) return;
         if (st.done) {
           t.cancel();
@@ -354,7 +354,7 @@ class _HometaxScreenState extends State<HometaxScreen> {
               });
               _reload();
             }
-          : () => _startPolling(j.id),
+          : () => _startPolling(j.jobId),
       child: Container(
         margin: const EdgeInsets.only(bottom: 8),
         padding: const EdgeInsets.all(12),

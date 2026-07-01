@@ -119,8 +119,9 @@ class SellerRepository {
     return HometaxJob.fromJson(body['job'] as Map<String, dynamic>);
   }
 
-  Future<HometaxJobState> hometaxJobState(int jobRowId) async {
-    final body = await _get('/seller/hometax/jobs/$jobRowId/state');
+  // 라우트가 {job:job_id} 바인딩이라 숫자 id가 아닌 job_id 문자열을 넘긴다.
+  Future<HometaxJobState> hometaxJobState(String jobId) async {
+    final body = await _get('/seller/hometax/jobs/$jobId/state');
     return HometaxJobState.fromJson(body);
   }
 
@@ -157,8 +158,9 @@ class SellerRepository {
   }
 
   // 은행 수집 상태 폴링 — 홈택스와 동일 형태({ok,state,label,done})라 재사용.
-  Future<HometaxJobState> bankJobState(int jobRowId) async {
-    final body = await _get('/seller/bank/jobs/$jobRowId/state');
+  // 라우트가 {job:job_id} 바인딩이라 job_id 문자열을 넘긴다.
+  Future<HometaxJobState> bankJobState(String jobId) async {
+    final body = await _get('/seller/bank/jobs/$jobId/state');
     return HometaxJobState.fromJson(body);
   }
 
