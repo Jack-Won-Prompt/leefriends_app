@@ -463,7 +463,8 @@ class _ScheduleEditorState extends State<_ScheduleEditor> {
           borderRadius: BorderRadius.vertical(top: Radius.circular(22)),
         ),
         padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
-        child: Column(
+        child: SingleChildScrollView(
+          child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -554,6 +555,7 @@ class _ScheduleEditorState extends State<_ScheduleEditor> {
               ),
             ),
           ],
+        ),
         ),
       ),
     );

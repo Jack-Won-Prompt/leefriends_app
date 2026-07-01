@@ -383,82 +383,102 @@ class _LeaveTabState extends State<_LeaveTab> {
       );
 
   Future<void> _requestLeave() async {
-    final dateCtrl = ValueNotifier<DateTime?>(null);
-    final reason = TextEditingController();
-    final ok = await showModalBottomSheet<bool>(
+    final result = await showModalBottomSheet<(String, String)>(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (ctx) => StatefulBuilder(builder: (ctx, setSheet) {
-        final inset = MediaQuery.of(ctx).viewInsets.bottom;
-        return Padding(
-          padding: EdgeInsets.only(bottom: inset),
-          child: Container(
-            decoration: const BoxDecoration(
-                color: AppColors.surface,
-                borderRadius: BorderRadius.vertical(top: Radius.circular(22))),
-            padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
-            child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
-              const Center(child: Text('휴무 신청', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800))),
-              const SizedBox(height: 16),
-              ValueListenableBuilder<DateTime?>(
-                valueListenable: dateCtrl,
-                builder: (_, v, _) => InkWell(
-                  onTap: () async {
-                    final p = await showDatePicker(
-                        context: ctx,
-                        initialDate: v ?? DateTime.now(),
-                        firstDate: DateTime(2020),
-                        lastDate: DateTime(2100));
-                    if (p != null) dateCtrl.value = p;
-                  },
-                  child: Container(
-                    padding: const EdgeInsets.all(14),
-                    decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: AppColors.line)),
-                    child: Row(children: [
-                      const Icon(Icons.calendar_today_outlined, size: 18, color: AppColors.mango700),
-                      const SizedBox(width: 10),
-                      Text(v == null ? '휴무 날짜 선택' : _fmt(v),
-                          style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700)),
-                    ]),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: reason,
-                maxLength: 200,
-                decoration: const InputDecoration(
-                    labelText: '사유 (선택)', border: OutlineInputBorder(), counterText: ''),
-              ),
-              const SizedBox(height: 16),
-              SizedBox(
-                width: double.infinity,
-                child: FilledButton(
-                  onPressed: () => Navigator.pop(ctx, true),
-                  style: FilledButton.styleFrom(minimumSize: const Size.fromHeight(50)),
-                  child: const Text('신청'),
-                ),
-              ),
-            ]),
-          ),
-        );
-      }),
+      builder: (_) => const _LeaveEditor(),
     );
-    if (ok == true && dateCtrl.value != null) {
-      try {
-        final m = await widget.repository.requestLeave(_fmt(dateCtrl.value!), reason.text.trim());
-        if (mounted) {
-          _toast(context, m);
-          _reload();
-        }
-      } catch (e) {
-        if (mounted) _toast(context, _msg(e), error: true);
+    if (result == null) return;
+    try {
+      final m = await widget.repository.requestLeave(result.$1, result.$2);
+      if (mounted) {
+        _toast(context, m);
+        _reload();
       }
+    } catch (e) {
+      if (mounted) _toast(context, _msg(e), error: true);
     }
-    reason.dispose();
+  }
+}
+
+/// 휴무 신청 바텀시트 — (yyyy-MM-dd, 사유) 반환.
+class _LeaveEditor extends StatefulWidget {
+  const _LeaveEditor();
+  @override
+  State<_LeaveEditor> createState() => _LeaveEditorState();
+}
+
+class _LeaveEditorState extends State<_LeaveEditor> {
+  DateTime? _date;
+  final _reason = TextEditingController();
+
+  @override
+  void dispose() {
+    _reason.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final inset = MediaQuery.of(context).viewInsets.bottom;
+    return Padding(
+      padding: EdgeInsets.only(bottom: inset),
+      child: Container(
+        decoration: const BoxDecoration(
+            color: AppColors.surface, borderRadius: BorderRadius.vertical(top: Radius.circular(22))),
+        padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
+        child: SingleChildScrollView(
+          child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
+            const Center(child: Text('휴무 신청', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800))),
+            const SizedBox(height: 16),
+            InkWell(
+              onTap: () async {
+                final p = await showDatePicker(
+                    context: context,
+                    initialDate: _date ?? DateTime.now(),
+                    firstDate: DateTime(2020),
+                    lastDate: DateTime(2100));
+                if (p != null) setState(() => _date = p);
+              },
+              child: Container(
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(12), border: Border.all(color: AppColors.line)),
+                child: Row(children: [
+                  const Icon(Icons.calendar_today_outlined, size: 18, color: AppColors.mango700),
+                  const SizedBox(width: 10),
+                  Text(_date == null ? '휴무 날짜 선택' : _fmt(_date!),
+                      style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700)),
+                ]),
+              ),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: _reason,
+              maxLength: 200,
+              decoration: const InputDecoration(
+                  labelText: '사유 (선택)', border: OutlineInputBorder(), counterText: ''),
+            ),
+            const SizedBox(height: 16),
+            SizedBox(
+              width: double.infinity,
+              child: FilledButton(
+                onPressed: () {
+                  if (_date == null) {
+                    _toast(context, '휴무 날짜를 선택해 주세요.', error: true);
+                    return;
+                  }
+                  Navigator.pop(context, (_fmt(_date!), _reason.text.trim()));
+                },
+                style: FilledButton.styleFrom(minimumSize: const Size.fromHeight(50)),
+                child: const Text('신청'),
+              ),
+            ),
+          ]),
+        ),
+      ),
+    );
   }
 }
 
@@ -939,7 +959,8 @@ class _AttendanceEditorState extends State<_AttendanceEditor> {
         decoration: const BoxDecoration(
             color: AppColors.surface, borderRadius: BorderRadius.vertical(top: Radius.circular(22))),
         padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
-        child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
+        child: SingleChildScrollView(
+          child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
           Center(child: Text(widget.title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800))),
           const SizedBox(height: 16),
           InkWell(
@@ -966,6 +987,7 @@ class _AttendanceEditorState extends State<_AttendanceEditor> {
             ),
           ),
         ]),
+        ),
       ),
     );
   }
