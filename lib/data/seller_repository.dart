@@ -4,6 +4,7 @@ import 'package:http/http.dart' as http;
 
 import '../models/edocs.dart';
 import '../models/fulfillment.dart';
+import '../models/hometax.dart';
 import '../models/paged.dart';
 import 'api_config.dart';
 import 'auth_controller.dart';
@@ -93,6 +94,48 @@ class SellerRepository {
   Future<String> sendPaymentRequestSms(int orderId) async {
     final body = await _post('/seller/orders/$orderId/payment-request', {});
     return body['message'] as String? ?? '입금요청 SMS를 전송했습니다.';
+  }
+
+  // ---- 본사 매출/매입 (홈택스 세금계산서 수집) ----
+  Future<HometaxIndex> hometax({String type = 'SELL', int page = 1, String? jobId}) async {
+    final q = 'type=$type&page=$page${jobId != null ? '&job_id=$jobId' : ''}';
+    final body = await _get('/seller/hometax?$q');
+    return HometaxIndex.fromJson(body);
+  }
+
+  Future<HometaxJob> hometaxRequest({
+    required String tiType,
+    required String startDate,
+    required String endDate,
+    String dateType = 'W',
+  }) async {
+    final body = await _post('/seller/hometax/request', {
+      'ti_type': tiType,
+      'start_date': startDate,
+      'end_date': endDate,
+      'date_type': dateType,
+    }, expect: 201);
+    return HometaxJob.fromJson(body['job'] as Map<String, dynamic>);
+  }
+
+  Future<HometaxJobState> hometaxJobState(int jobRowId) async {
+    final body = await _get('/seller/hometax/jobs/$jobRowId/state');
+    return HometaxJobState.fromJson(body);
+  }
+
+  Future<Map<String, dynamic>> hometaxDetail(String nts) async {
+    final body = await _get('/seller/hometax/detail?nts=$nts');
+    return body['data'] as Map<String, dynamic>? ?? {};
+  }
+
+  Future<String> hometaxCertUrl() async {
+    final body = await _get('/seller/hometax/cert-url');
+    return body['url'] as String? ?? '';
+  }
+
+  Future<String> hometaxFlatRateUrl() async {
+    final body = await _get('/seller/hometax/flat-rate-url');
+    return body['url'] as String? ?? '';
   }
 
   // 품목 공급가/출고가/수량 수정 (본사)

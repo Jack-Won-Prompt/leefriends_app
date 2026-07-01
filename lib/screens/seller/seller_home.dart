@@ -7,6 +7,7 @@ import '../../theme/app_colors.dart';
 import '../../widgets/dashboard_header.dart';
 import 'categories_screen.dart';
 import 'create_shipment_screen.dart';
+import 'hometax_screen.dart';
 import 'inquiries_screen.dart';
 import 'notices_manage_screen.dart';
 import 'order_changes_screen.dart';
@@ -372,6 +373,13 @@ class _SellerHomeState extends State<SellerHome> {
           onTap: () => _go(SellerStatementsScreen(
               repository: widget.repository, roleLabel: widget.roleLabel)),
         ),
+        if (_isHq)
+          _NavCard(
+            icon: Icons.account_balance_wallet_outlined,
+            title: '매출/매입 (홈택스)',
+            sub: '홈택스 세금계산서 수집·조회',
+            onTap: () => _go(HometaxScreen(repository: widget.repository)),
+          ),
       ]);
 
   // ── 상품·기준정보 ──
