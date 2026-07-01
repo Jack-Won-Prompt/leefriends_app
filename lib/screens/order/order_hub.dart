@@ -90,7 +90,19 @@ class _OrderHubState extends State<OrderHub> {
         }
 
         final user = auth.user!;
-        // 로그인 후엔 역할별 셸이 자체 하단 네비게이션(업무 대분류)을 가짐.
+        // 아르바이트(part_time)는 근태(출퇴근·휴무)만 접근 — 서버 RestrictPartTime 과 동일.
+        if (user.isPartTime) {
+          return AttendanceScreen(
+            repository: _attendance,
+            isPartTime: true,
+            homeMode: true,
+            userName: user.name,
+            unread: _unread,
+            onNotifications: _openNotifications,
+            onLogout: () => _confirmLogout(auth),
+          );
+        }
+        // 정직원·본사·공급사는 역할별 셸이 자체 하단 네비게이션(업무 대분류)을 가짐.
         return user.isStore
             ? StoreHome(
                 storeName: user.storeName ?? '매장',

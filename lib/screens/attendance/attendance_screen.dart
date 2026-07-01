@@ -6,11 +6,27 @@ import '../../models/store_ops.dart' show won;
 import '../../theme/app_colors.dart';
 
 /// 근태관리 — 아르바이트(출퇴근·휴무) / 정직원(승인·급여). isPartTime 로 분기.
+/// 홈 모드(아르바이트 전용): onLogout 등을 주면 AppBar에 인사·알림·로그아웃을 표시하고
+/// 뒤로가기를 숨긴다(아르바이트는 이 화면이 앱의 전부).
 class AttendanceScreen extends StatelessWidget {
-  const AttendanceScreen({super.key, required this.repository, required this.isPartTime});
+  const AttendanceScreen({
+    super.key,
+    required this.repository,
+    required this.isPartTime,
+    this.homeMode = false,
+    this.userName,
+    this.unread = 0,
+    this.onLogout,
+    this.onNotifications,
+  });
 
   final AttendanceRepository repository;
   final bool isPartTime;
+  final bool homeMode;
+  final String? userName;
+  final int unread;
+  final VoidCallback? onLogout;
+  final VoidCallback? onNotifications;
 
   @override
   Widget build(BuildContext context) {
@@ -19,7 +35,36 @@ class AttendanceScreen extends StatelessWidget {
       child: Scaffold(
         backgroundColor: AppColors.cream,
         appBar: AppBar(
-          title: const Text('근태관리'),
+          automaticallyImplyLeading: !homeMode,
+          title: Text(homeMode ? '${userName ?? ''} · 근태' : '근태관리'),
+          actions: homeMode
+              ? [
+                  if (onNotifications != null)
+                    Stack(alignment: Alignment.center, children: [
+                      IconButton(
+                          onPressed: onNotifications,
+                          icon: const Icon(Icons.notifications_none_rounded)),
+                      if (unread > 0)
+                        Positioned(
+                          top: 8,
+                          right: 8,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+                            constraints: const BoxConstraints(minWidth: 16),
+                            decoration: BoxDecoration(
+                                color: AppColors.accent, borderRadius: BorderRadius.circular(100)),
+                            child: Text(unread > 99 ? '99+' : '$unread',
+                                textAlign: TextAlign.center,
+                                style: const TextStyle(
+                                    color: Colors.white, fontSize: 10, fontWeight: FontWeight.w800)),
+                          ),
+                        ),
+                    ]),
+                  if (onLogout != null)
+                    IconButton(onPressed: onLogout, icon: const Icon(Icons.logout_rounded)),
+                  const SizedBox(width: 4),
+                ]
+              : null,
           bottom: TabBar(
             labelColor: AppColors.accent,
             unselectedLabelColor: AppColors.inkSoft,
