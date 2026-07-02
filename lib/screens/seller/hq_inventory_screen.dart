@@ -25,7 +25,8 @@ class _HqInventoryScreenState extends State<HqInventoryScreen> {
   @override
   void initState() {
     super.initState();
-    _reload();
+    // initState 에서는 setState 없이 직접 대입 (셸 IndexedStack 내 build 중 생성 대비)
+    _future = widget.repository.hqInventory(q: _q, only: _only);
   }
 
   void _reload() =>
