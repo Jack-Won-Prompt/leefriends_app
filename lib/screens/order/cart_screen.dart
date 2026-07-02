@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../data/cart_controller.dart';
 import '../../data/order_repository.dart';
 import '../../theme/app_colors.dart';
+import '../../widgets/product_thumb.dart';
 import 'order_detail_screen.dart';
 
 /// 장바구니 확인 + 발주 접수/수정.
@@ -192,6 +193,8 @@ class _CartLineTile extends StatelessWidget {
         ),
         child: Row(
           children: [
+            ProductThumb(url: line.product.imageUrl, size: 48),
+            const SizedBox(width: 12),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,

@@ -19,6 +19,7 @@ class OrderItemView {
   final int storeLineAmount;
   final bool pricePending;
   final String? supplierName;
+  final String? imageUrl;
 
   const OrderItemView({
     required this.id,
@@ -31,6 +32,7 @@ class OrderItemView {
     required this.storeLineAmount,
     required this.pricePending,
     required this.supplierName,
+    this.imageUrl,
   });
 
   /// 싯가 미확정이면 금액 대신 안내 문구.
@@ -47,6 +49,7 @@ class OrderItemView {
         storeLineAmount: (j['store_line_amount'] as num?)?.toInt() ?? 0,
         pricePending: j['price_pending'] as bool? ?? false,
         supplierName: j['supplier_name'] as String?,
+        imageUrl: j['image'] as String?,
       );
 }
 

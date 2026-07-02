@@ -6,6 +6,7 @@ import '../../models/paged.dart';
 import '../../models/store_ops.dart' show won;
 import '../../theme/app_colors.dart';
 import '../../widgets/paged_list_view.dart';
+import '../../widgets/product_thumb.dart';
 import 'seller_widgets.dart';
 
 class SellerOrdersScreen extends StatefulWidget {
@@ -458,6 +459,8 @@ class _SellerOrderDetailScreenState extends State<SellerOrderDetailScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(children: [
+            ProductThumb(url: it.imageUrl, size: 46),
+            const SizedBox(width: 12),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,

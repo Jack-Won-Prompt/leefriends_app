@@ -4,6 +4,7 @@ import '../../data/seller_repository.dart';
 import '../../models/fulfillment.dart';
 import '../../models/store_ops.dart' show won;
 import '../../theme/app_colors.dart';
+import '../../widgets/product_thumb.dart';
 
 /// 상품(물품) 관리 — 본사 CRUD/승인·반려, 공급처 등록/수정.
 class ProductsScreen extends StatefulWidget {
@@ -264,6 +265,8 @@ class _ProductTile extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(children: [
+            ProductThumb(url: p.imageUrl, size: 46),
+            const SizedBox(width: 12),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,

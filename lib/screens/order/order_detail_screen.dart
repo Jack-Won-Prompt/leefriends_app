@@ -4,6 +4,7 @@ import '../../data/cart_controller.dart';
 import '../../data/order_repository.dart';
 import '../../models/order.dart';
 import '../../theme/app_colors.dart';
+import '../../widgets/product_thumb.dart';
 import 'cart_screen.dart';
 import 'order_statement_screen.dart';
 import '../seller/seller_widgets.dart' show PaidBadge;
@@ -321,6 +322,8 @@ class _ItemRow extends StatelessWidget {
       ),
       child: Row(
         children: [
+          ProductThumb(url: item.imageUrl, size: 48),
+          const SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,

@@ -58,6 +58,7 @@ class FulfillItem {
   final String? supplierName;
   final String? supplyType; // hq | supplier
   final String? fulfillmentStatus;
+  final String? imageUrl;
 
   const FulfillItem({
     required this.id,
@@ -72,6 +73,7 @@ class FulfillItem {
     required this.supplierName,
     required this.supplyType,
     required this.fulfillmentStatus,
+    this.imageUrl,
   });
 
   factory FulfillItem.fromJson(Map<String, dynamic> j) => FulfillItem(
@@ -87,6 +89,7 @@ class FulfillItem {
         supplierName: j['supplier_name'] as String?,
         supplyType: j['supply_type'] as String?,
         fulfillmentStatus: j['fulfillment_status'] as String?,
+        imageUrl: j['image'] as String?,
       );
 }
 
@@ -343,6 +346,7 @@ class ManagedProduct {
   final bool isActive;
   final String approvalStatus; // approved | pending | rejected
   final String? approvalNote;
+  final String? imageUrl;
 
   const ManagedProduct({
     required this.id,
@@ -360,6 +364,7 @@ class ManagedProduct {
     required this.isActive,
     required this.approvalStatus,
     required this.approvalNote,
+    this.imageUrl,
   });
 
   factory ManagedProduct.fromJson(Map<String, dynamic> j) => ManagedProduct(
@@ -378,6 +383,7 @@ class ManagedProduct {
         isActive: j['is_active'] as bool? ?? true,
         approvalStatus: j['approval_status'] as String? ?? 'approved',
         approvalNote: j['approval_note'] as String?,
+        imageUrl: j['image'] as String?,
       );
 }
 
