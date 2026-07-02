@@ -132,6 +132,56 @@ class AttendanceRepository {
   Future<String> unpayWage(int settlementId) async =>
       (await _send('DELETE', '/wages/$settlementId'))['message']?.toString() ?? '취소했습니다.';
 
+  // ---- 직원 관리 (정직원만) ----
+  Future<List<StaffMember>> staff() async {
+    final b = await _send('GET', '/staff');
+    return (b['data'] as List? ?? [])
+        .map((e) => StaffMember.fromJson(e as Map<String, dynamic>))
+        .toList();
+  }
+
+  Future<String> createStaff({
+    required String name,
+    required String email,
+    required String password,
+    String? phone,
+    required String employmentType,
+    int? hourlyWage,
+  }) async {
+    final b = await _send('POST', '/staff', {
+      'name': name,
+      'email': email,
+      'password': password,
+      if (phone != null && phone.isNotEmpty) 'phone': phone,
+      'employment_type': employmentType,
+      if (employmentType == 'part_time') 'hourly_wage': hourlyWage ?? 0,
+    });
+    return b['message']?.toString() ?? '직원을 등록했습니다.';
+  }
+
+  Future<String> updateStaff(
+    int id, {
+    required String name,
+    required String email,
+    String? password,
+    String? phone,
+    required String employmentType,
+    int? hourlyWage,
+  }) async {
+    final b = await _send('PUT', '/staff/$id', {
+      'name': name,
+      'email': email,
+      if (password != null && password.isNotEmpty) 'password': password,
+      if (phone != null && phone.isNotEmpty) 'phone': phone,
+      'employment_type': employmentType,
+      if (employmentType == 'part_time') 'hourly_wage': hourlyWage ?? 0,
+    });
+    return b['message']?.toString() ?? '수정했습니다.';
+  }
+
+  Future<String> deleteStaff(int id) async =>
+      (await _send('DELETE', '/staff/$id'))['message']?.toString() ?? '삭제했습니다.';
+
   // ---- helper ----
   Future<Map<String, dynamic>> _send(String method, String path,
       [Map<String, dynamic>? body]) async {

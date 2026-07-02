@@ -1,4 +1,42 @@
-// 근태관리(출퇴근·휴무·급여) 모델.
+// 근태관리(출퇴근·휴무·급여) + 직원 관리 모델.
+
+class StaffMember {
+  StaffMember({
+    required this.id,
+    required this.name,
+    required this.email,
+    this.phone,
+    this.employmentType = 'regular',
+    this.employmentLabel = '정직원',
+    this.hourlyWage = 0,
+    this.isAdmin = false,
+    this.isSelf = false,
+  });
+
+  final int id;
+  final String name;
+  final String email;
+  final String? phone;
+  final String employmentType; // regular | part_time
+  final String employmentLabel;
+  final int hourlyWage;
+  final bool isAdmin;
+  final bool isSelf;
+
+  bool get isPartTime => employmentType == 'part_time';
+
+  factory StaffMember.fromJson(Map<String, dynamic> j) => StaffMember(
+        id: (j['id'] as num).toInt(),
+        name: j['name']?.toString() ?? '',
+        email: j['email']?.toString() ?? '',
+        phone: j['phone']?.toString(),
+        employmentType: j['employment_type']?.toString() ?? 'regular',
+        employmentLabel: j['employment_label']?.toString() ?? '정직원',
+        hourlyWage: (j['hourly_wage'] as num?)?.toInt() ?? 0,
+        isAdmin: j['is_admin'] == true,
+        isSelf: j['is_self'] == true,
+      );
+}
 
 class StaffRef {
   StaffRef({required this.id, required this.name});
