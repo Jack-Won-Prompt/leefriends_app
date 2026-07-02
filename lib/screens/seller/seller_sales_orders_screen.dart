@@ -5,6 +5,7 @@ import '../../models/fulfillment.dart';
 import '../../models/paged.dart';
 import '../../models/store_ops.dart' show won;
 import '../../theme/app_colors.dart';
+import '../../widgets/product_thumb.dart';
 import '../../widgets/paged_list_view.dart';
 import 'seller_widgets.dart';
 
@@ -220,6 +221,8 @@ class _SalesOrderDetailScreenState extends State<SalesOrderDetailScreen> {
                     border: Border.all(color: AppColors.line),
                   ),
                   child: Row(children: [
+                    ProductThumb(url: it.imageUrl, size: 42),
+                    const SizedBox(width: 10),
                     Expanded(
                         child: Text('${it.productName}  ·  ${it.qty}${it.unit}',
                             style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600))),

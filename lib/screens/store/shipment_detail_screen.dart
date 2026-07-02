@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../data/store_ops_repository.dart';
 import '../../models/store_ops.dart';
 import '../../theme/app_colors.dart';
+import '../../widgets/product_thumb.dart';
 
 class ShipmentDetailScreen extends StatefulWidget {
   const ShipmentDetailScreen({
@@ -141,6 +142,8 @@ class _ShipmentDetailScreenState extends State<ShipmentDetailScreen> {
                     border: Border.all(color: AppColors.line),
                   ),
                   child: Row(children: [
+                    ProductThumb(url: it.imageUrl, size: 42),
+                    const SizedBox(width: 10),
                     Expanded(
                         child: Text(it.productName,
                             style: const TextStyle(

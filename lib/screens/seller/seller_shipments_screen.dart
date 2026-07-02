@@ -4,6 +4,7 @@ import '../../data/seller_repository.dart';
 import '../../models/fulfillment.dart';
 import '../../models/paged.dart';
 import '../../theme/app_colors.dart';
+import '../../widgets/product_thumb.dart';
 import '../../widgets/paged_list_view.dart';
 import 'barcode_scan_screen.dart';
 import 'create_shipment_screen.dart';
@@ -253,6 +254,8 @@ class _ShipmentConfirmScreenState extends State<ShipmentConfirmScreen> {
                     border: Border.all(color: AppColors.line),
                   ),
                   child: Row(children: [
+                    ProductThumb(url: it.imageUrl, size: 42),
+                    const SizedBox(width: 10),
                     Expanded(child: Text(it.productName,
                         style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700))),
                     Text('${it.qty}${it.unit}',

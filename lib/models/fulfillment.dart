@@ -310,6 +310,7 @@ class CandidateItem {
   final int qty;
   final String? orderNo;
   final String? salesOrderNo;
+  final String? imageUrl;
 
   const CandidateItem({
     required this.id,
@@ -318,6 +319,7 @@ class CandidateItem {
     required this.qty,
     required this.orderNo,
     required this.salesOrderNo,
+    this.imageUrl,
   });
 
   factory CandidateItem.fromJson(Map<String, dynamic> j) => CandidateItem(
@@ -327,6 +329,7 @@ class CandidateItem {
         qty: _i(j['qty']),
         orderNo: j['order_no'] as String?,
         salesOrderNo: j['sales_order_no'] as String?,
+        imageUrl: j['image'] as String?,
       );
 }
 

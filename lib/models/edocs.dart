@@ -379,6 +379,7 @@ class SupplierSalesItem {
     required this.qty,
     required this.supplyLineAmount,
     required this.fulfillmentStatus,
+    this.imageUrl,
   });
   final int id;
   final String productName;
@@ -386,6 +387,7 @@ class SupplierSalesItem {
   final int qty;
   final int supplyLineAmount;
   final String fulfillmentStatus;
+  final String? imageUrl;
 
   factory SupplierSalesItem.fromJson(Map<String, dynamic> j) => SupplierSalesItem(
         id: _int(j['id']),
@@ -394,6 +396,7 @@ class SupplierSalesItem {
         qty: _int(j['qty']),
         supplyLineAmount: _int(j['supply_line_amount']),
         fulfillmentStatus: j['fulfillment_status']?.toString() ?? '',
+        imageUrl: j['image']?.toString(),
       );
 }
 

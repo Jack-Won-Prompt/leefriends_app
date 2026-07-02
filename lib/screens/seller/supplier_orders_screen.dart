@@ -5,6 +5,7 @@ import '../../models/edocs.dart';
 import '../../models/paged.dart';
 import '../../models/store_ops.dart' show won;
 import '../../theme/app_colors.dart';
+import '../../widgets/product_thumb.dart';
 import '../../widgets/paged_list_view.dart';
 
 /// 본사 — 공급사 발주 현황 (공급사별 판매주문 모아보기 + 필터 + 합계).
@@ -302,6 +303,8 @@ class _SupplierOrderDetailScreenState extends State<SupplierOrderDetailScreen> {
                     border: Border.all(color: AppColors.line),
                   ),
                   child: Row(children: [
+                    ProductThumb(url: it.imageUrl, size: 44),
+                    const SizedBox(width: 10),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,

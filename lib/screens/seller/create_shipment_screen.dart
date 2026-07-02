@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../data/seller_repository.dart';
 import '../../models/fulfillment.dart';
 import '../../theme/app_colors.dart';
+import '../../widgets/product_thumb.dart';
 
 /// 확인된 판매주문 품목으로 출고 생성 — 매장 단위로 품목 선택.
 class CreateShipmentScreen extends StatefulWidget {
@@ -202,6 +203,7 @@ class _StoreShipmentBuilderState extends State<_StoreShipmentBuilder> {
               }),
               activeColor: AppColors.accent,
               contentPadding: const EdgeInsets.symmetric(horizontal: 4),
+              secondary: ProductThumb(url: it.imageUrl, size: 42),
               title: Text('${it.productName}  ${it.qty}${it.unit}',
                   style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
               subtitle: Text(it.salesOrderNo ?? it.orderNo ?? '',

@@ -290,12 +290,14 @@ class ShipmentItem {
   final String productName;
   final String unit;
   final int qty;
+  final String? imageUrl;
 
   const ShipmentItem({
     required this.id,
     required this.productName,
     required this.unit,
     required this.qty,
+    this.imageUrl,
   });
 
   factory ShipmentItem.fromJson(Map<String, dynamic> j) => ShipmentItem(
@@ -303,6 +305,7 @@ class ShipmentItem {
         productName: j['product_name'] as String? ?? '',
         unit: j['unit'] as String? ?? '',
         qty: (j['qty'] as num?)?.toInt() ?? 0,
+        imageUrl: j['image'] as String?,
       );
 }
 
@@ -314,6 +317,7 @@ class InventoryItem {
   final String productName;
   final String unitName;
   final int qty;
+  final String? imageUrl;
 
   const InventoryItem({
     required this.id,
@@ -322,6 +326,7 @@ class InventoryItem {
     required this.productName,
     required this.unitName,
     required this.qty,
+    this.imageUrl,
   });
 
   factory InventoryItem.fromJson(Map<String, dynamic> j) => InventoryItem(
@@ -331,6 +336,7 @@ class InventoryItem {
         productName: j['product_name'] as String? ?? '',
         unitName: j['unit_name'] as String? ?? '',
         qty: (j['qty'] as num?)?.toInt() ?? 0,
+        imageUrl: j['image'] as String?,
       );
 }
 

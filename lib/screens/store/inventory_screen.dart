@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../data/store_ops_repository.dart';
 import '../../models/store_ops.dart';
 import '../../theme/app_colors.dart';
+import '../../widgets/product_thumb.dart';
 
 class InventoryScreen extends StatefulWidget {
   const InventoryScreen({super.key, required this.repository});
@@ -132,6 +133,8 @@ class _InventoryScreenState extends State<InventoryScreen>
                     ),
                     child: Row(
                       children: [
+                        ProductThumb(url: it.imageUrl, size: 46),
+                        const SizedBox(width: 12),
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
