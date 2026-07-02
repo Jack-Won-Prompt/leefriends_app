@@ -540,10 +540,12 @@ class SellerRepository {
     int? storeId,
     required List<Map<String, int>> items,
     bool send = false,
+    String? statementDate, // 발행일자 (본사, yyyy-MM-dd)
   }) async {
     final payload = <String, dynamic>{'items': items};
     if (storeId != null) payload['store_id'] = storeId;
     if (send) payload['send'] = true;
+    if (statementDate != null) payload['statement_date'] = statementDate;
     final body = await _post('/seller/statements', payload, expect: 201);
     return body['message'] as String? ?? '처리되었습니다.';
   }

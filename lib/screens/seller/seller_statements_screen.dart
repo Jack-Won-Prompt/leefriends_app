@@ -368,6 +368,7 @@ class _CreateStatementScreenState extends State<CreateStatementScreen> {
 
   StatementCatalog? _catalog;
   CatalogStore? _store;
+  DateTime _statementDate = DateTime.now(); // 발행일자 (본사)
   final Map<int, int> _qty = {}; // productId → qty
   bool _loading = true;
   bool _busy = false;
@@ -432,6 +433,9 @@ class _CreateStatementScreenState extends State<CreateStatementScreen> {
         storeId: _isHq ? _store!.id : null,
         items: _items,
         send: send,
+        statementDate: _isHq
+            ? '${_statementDate.year}-${_statementDate.month.toString().padLeft(2, '0')}-${_statementDate.day.toString().padLeft(2, '0')}'
+            : null,
       );
       if (!mounted) return;
       _toast(msg, ok: true);
@@ -478,6 +482,7 @@ class _CreateStatementScreenState extends State<CreateStatementScreen> {
               : Column(
                   children: [
                     if (_isHq) _storePicker(c!),
+                    if (_isHq) _datePicker(),
                     Padding(
                       padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
                       child: TextField(
@@ -511,6 +516,35 @@ class _CreateStatementScreenState extends State<CreateStatementScreen> {
                     ),
                   ],
                 ),
+    );
+  }
+
+  Widget _datePicker() {
+    final d = _statementDate;
+    final label =
+        '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
+    return Container(
+      margin: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: AppColors.line),
+      ),
+      child: ListTile(
+        leading: const Icon(Icons.event_outlined, color: AppColors.mango700),
+        title: const Text('발행일자', style: TextStyle(fontSize: 13, color: AppColors.inkSoft)),
+        trailing: Text(label,
+            style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: AppColors.ink)),
+        onTap: () async {
+          final p = await showDatePicker(
+            context: context,
+            initialDate: _statementDate,
+            firstDate: DateTime(2020),
+            lastDate: DateTime(2100),
+          );
+          if (p != null) setState(() => _statementDate = p);
+        },
+      ),
     );
   }
 
