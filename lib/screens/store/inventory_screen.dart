@@ -6,9 +6,11 @@ import '../../theme/app_colors.dart';
 import '../../widgets/product_thumb.dart';
 
 class InventoryScreen extends StatefulWidget {
-  const InventoryScreen({super.key, required this.repository});
+  const InventoryScreen({super.key, required this.repository, this.embedded = false});
 
   final StoreOpsRepository repository;
+  /// 셸 하단 탭에 삽입될 때 true — Scaffold/AppBar 없이 탭바+본문만 렌더.
+  final bool embedded;
 
   @override
   State<InventoryScreen> createState() => _InventoryScreenState();
@@ -56,23 +58,28 @@ class _InventoryScreenState extends State<InventoryScreen>
 
   @override
   Widget build(BuildContext context) {
+    final tabBar = TabBar(
+      controller: _tab,
+      labelColor: AppColors.accent,
+      unselectedLabelColor: AppColors.inkSoft,
+      indicatorColor: AppColors.accent,
+      labelStyle: const TextStyle(fontWeight: FontWeight.w800),
+      tabs: const [Tab(text: '재고 현황'), Tab(text: '이동 내역')],
+    );
+    final view = TabBarView(controller: _tab, children: [_stockTab(), _movesTab()]);
+
+    // 셸 하단 탭에 삽입 — AppBar 없이 탭바+본문만
+    if (widget.embedded) {
+      return Column(children: [
+        Material(color: AppColors.cream, child: tabBar),
+        Expanded(child: view),
+      ]);
+    }
+
     return Scaffold(
       backgroundColor: AppColors.cream,
-      appBar: AppBar(
-        title: const Text('재고'),
-        bottom: TabBar(
-          controller: _tab,
-          labelColor: AppColors.accent,
-          unselectedLabelColor: AppColors.inkSoft,
-          indicatorColor: AppColors.accent,
-          labelStyle: const TextStyle(fontWeight: FontWeight.w800),
-          tabs: const [Tab(text: '재고 현황'), Tab(text: '이동 내역')],
-        ),
-      ),
-      body: TabBarView(
-        controller: _tab,
-        children: [_stockTab(), _movesTab()],
-      ),
+      appBar: AppBar(title: const Text('재고'), bottom: tabBar),
+      body: view,
     );
   }
 

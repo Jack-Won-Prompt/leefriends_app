@@ -7,9 +7,11 @@ import '../../widgets/product_thumb.dart';
 
 /// 본사 재고/물류 관리 — 창고 재고 조회·조정·수동입고·기본셋팅·입고알림. 본사 전용.
 class HqInventoryScreen extends StatefulWidget {
-  const HqInventoryScreen({super.key, required this.repository});
+  const HqInventoryScreen({super.key, required this.repository, this.embedded = false});
 
   final SellerRepository repository;
+  /// 셸 하단 탭에 삽입될 때 true — Scaffold/AppBar 없이 본문만 렌더.
+  final bool embedded;
 
   @override
   State<HqInventoryScreen> createState() => _HqInventoryScreenState();
@@ -51,41 +53,37 @@ class _HqInventoryScreenState extends State<HqInventoryScreen> {
   @override
   Widget build(BuildContext context) {
     final bottom = 24 + MediaQuery.of(context).padding.bottom;
-    return Scaffold(
-      backgroundColor: AppColors.cream,
-      appBar: AppBar(
-        title: const Text('본사 재고'),
-        actions: [
-          PopupMenuButton<String>(
-            icon: const Icon(Icons.more_vert),
-            onSelected: (v) {
-              if (v == 'seed') _confirmSeed();
-            },
-            itemBuilder: (_) => const [
-              PopupMenuItem(value: 'seed', child: Text('기본재고 일괄 셋팅(10개)')),
-            ],
-          ),
-        ],
-      ),
-      body: Column(
+    final body = Column(
         children: [
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
-            child: TextField(
-              onChanged: (v) => _q = v,
-              onSubmitted: (_) => _reload(),
-              textInputAction: TextInputAction.search,
-              decoration: InputDecoration(
-                hintText: '품목명·코드 검색',
-                prefixIcon: const Icon(Icons.search, color: AppColors.inkSoft),
-                filled: true,
-                fillColor: AppColors.surface,
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
-                enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(14),
-                    borderSide: const BorderSide(color: AppColors.line)),
+            child: Row(children: [
+              Expanded(
+                child: TextField(
+                  onChanged: (v) => _q = v,
+                  onSubmitted: (_) => _reload(),
+                  textInputAction: TextInputAction.search,
+                  decoration: InputDecoration(
+                    hintText: '품목명·코드 검색',
+                    prefixIcon: const Icon(Icons.search, color: AppColors.inkSoft),
+                    filled: true,
+                    fillColor: AppColors.surface,
+                    isDense: true,
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
+                    enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(14),
+                        borderSide: const BorderSide(color: AppColors.line)),
+                  ),
+                ),
               ),
-            ),
+              // 임베드 모드에선 AppBar가 없으므로 기본셋팅 버튼을 검색줄에 둠
+              if (widget.embedded)
+                IconButton(
+                  tooltip: '기본재고 일괄 셋팅',
+                  icon: const Icon(Icons.playlist_add, color: AppColors.mango700),
+                  onPressed: _confirmSeed,
+                ),
+            ]),
           ),
           SizedBox(
             height: 44,
@@ -145,7 +143,26 @@ class _HqInventoryScreenState extends State<HqInventoryScreen> {
             ),
           ),
         ],
+      );
+
+    if (widget.embedded) return body;
+    return Scaffold(
+      backgroundColor: AppColors.cream,
+      appBar: AppBar(
+        title: const Text('본사 재고'),
+        actions: [
+          PopupMenuButton<String>(
+            icon: const Icon(Icons.more_vert),
+            onSelected: (v) {
+              if (v == 'seed') _confirmSeed();
+            },
+            itemBuilder: (_) => const [
+              PopupMenuItem(value: 'seed', child: Text('기본재고 일괄 셋팅(10개)')),
+            ],
+          ),
+        ],
       ),
+      body: body,
     );
   }
 

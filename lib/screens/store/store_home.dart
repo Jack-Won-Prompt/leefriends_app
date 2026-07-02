@@ -110,7 +110,7 @@ class _StoreHomeState extends State<StoreHome> {
               children: [
                 _homeTab(),
                 _orderPurchaseTab(),
-                _inboundStockTab(),
+                _inventoryTab(),
                 _docsTab(),
               ],
             ),
@@ -149,7 +149,7 @@ class _StoreHomeState extends State<StoreHome> {
               BottomNavigationBarItem(
                   icon: Icon(Icons.inventory_2_outlined),
                   activeIcon: Icon(Icons.inventory_2),
-                  label: '입고·재고'),
+                  label: '재고'),
               BottomNavigationBarItem(
                   icon: Icon(Icons.description_outlined),
                   activeIcon: Icon(Icons.description),
@@ -246,23 +246,43 @@ class _StoreHomeState extends State<StoreHome> {
         ]),
       ]);
 
-  // ── 입고·재고 ──
-  Widget _inboundStockTab() => _tabBody([
-        _grid([
-          _FeatureCard(
-            icon: Icons.local_shipping_outlined,
-            title: '입고 예정',
-            sub: '배송중·입고처리',
-            onTap: () => _push(context, InboundScreen(repository: widget.ops)),
+  // ── 재고 (재고 화면 직접 + 입고 예정 바로가기) ──
+  Widget _inventoryTab() => Column(
+        children: [
+          // 상단 입고 예정 바로가기
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+            child: Material(
+              color: AppColors.surface,
+              borderRadius: BorderRadius.circular(12),
+              child: InkWell(
+                onTap: () => _push(context, InboundScreen(repository: widget.ops)),
+                borderRadius: BorderRadius.circular(12),
+                child: Ink(
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: AppColors.line),
+                  ),
+                  child: Row(children: [
+                    const Icon(Icons.local_shipping_outlined, size: 20, color: AppColors.mango700),
+                    const SizedBox(width: 10),
+                    const Expanded(
+                      child: Text('입고 예정',
+                          style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700)),
+                    ),
+                    const Text('배송중·입고처리',
+                        style: TextStyle(fontSize: 12, color: AppColors.inkSoft)),
+                    const Icon(Icons.chevron_right, color: AppColors.inkSoft),
+                  ]),
+                ),
+              ),
+            ),
           ),
-          _FeatureCard(
-            icon: Icons.inventory_2_outlined,
-            title: '재고',
-            sub: '현황·사용',
-            onTap: () => _push(context, InventoryScreen(repository: widget.ops)),
-          ),
-        ]),
-      ]);
+          // 재고 현황/이동내역 (임베드)
+          Expanded(child: InventoryScreen(repository: widget.ops, embedded: true)),
+        ],
+      );
 
   // ── 전자문서 ──
   Widget _docsTab() => _tabBody([

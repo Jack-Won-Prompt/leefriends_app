@@ -121,12 +121,22 @@ class _SellerHomeState extends State<SellerHome> {
         ),
         if (_isHq)
           _TabDef(
+            icon: Icons.warehouse_outlined,
+            activeIcon: Icons.warehouse,
+            label: '재고',
+            page: _hqInventoryTab,
+          ),
+        if (_isHq)
+          _TabDef(
             icon: Icons.store_outlined,
             activeIcon: Icons.store,
             label: '거래처',
             page: _partnerTab,
           ),
       ];
+
+  // 본사 재고 탭 — HqInventoryScreen 임베드
+  Widget _hqInventoryTab() => HqInventoryScreen(repository: widget.repository, embedded: true);
 
   @override
   Widget build(BuildContext context) {
@@ -422,13 +432,6 @@ class _SellerHomeState extends State<SellerHome> {
             title: '카테고리 관리',
             sub: '품목 대분류 관리',
             onTap: () => _go(CategoriesScreen(repository: widget.repository)),
-          ),
-        if (_isHq)
-          _NavCard(
-            icon: Icons.warehouse_outlined,
-            title: '본사 재고',
-            sub: '창고 재고 조정·입고·부족 확인',
-            onTap: () => _go(HqInventoryScreen(repository: widget.repository)),
           ),
       ]);
 
