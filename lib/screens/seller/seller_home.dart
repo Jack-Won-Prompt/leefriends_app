@@ -9,6 +9,7 @@ import 'bank_deposit_screen.dart';
 import 'categories_screen.dart';
 import 'create_shipment_screen.dart';
 import 'hometax_screen.dart';
+import 'hq_inventory_screen.dart';
 import 'store_payments_screen.dart';
 import 'inquiries_screen.dart';
 import 'notices_manage_screen.dart';
@@ -421,6 +422,13 @@ class _SellerHomeState extends State<SellerHome> {
             title: '카테고리 관리',
             sub: '품목 대분류 관리',
             onTap: () => _go(CategoriesScreen(repository: widget.repository)),
+          ),
+        if (_isHq)
+          _NavCard(
+            icon: Icons.warehouse_outlined,
+            title: '본사 재고',
+            sub: '창고 재고 조정·입고·부족 확인',
+            onTap: () => _go(HqInventoryScreen(repository: widget.repository)),
           ),
       ]);
 

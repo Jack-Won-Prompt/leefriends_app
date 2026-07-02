@@ -6,6 +6,7 @@ import '../models/bank_deposit.dart';
 import '../models/edocs.dart';
 import '../models/fulfillment.dart';
 import '../models/hometax.dart';
+import '../models/hq_inventory.dart';
 import '../models/paged.dart';
 import '../models/store_payment.dart';
 import 'api_config.dart';
@@ -190,6 +191,36 @@ class SellerRepository {
   Future<String> bankFlatRateUrl() async {
     final body = await _get('/seller/bank/flat-rate-url');
     return body['url'] as String? ?? '';
+  }
+
+  // ---- 본사 재고/물류 관리 ----
+  Future<HqInventoryIndex> hqInventory({String q = '', String only = 'all', int page = 1}) async {
+    final params = <String>['only=$only', 'page=$page'];
+    if (q.isNotEmpty) params.add('q=${Uri.encodeComponent(q)}');
+    final body = await _get('/seller/hq-inventory?${params.join('&')}');
+    return HqInventoryIndex.fromJson(body);
+  }
+
+  Future<String> hqInventoryAdjust(int productId, int qty, {String? note}) async {
+    final body = await _post('/seller/hq-inventory/adjust',
+        {'supply_product_id': productId, 'qty': qty, 'note': ?note});
+    return body['message'] as String? ?? '재고를 조정했습니다.';
+  }
+
+  Future<String> hqInventoryInbound(int productId, int qty, {String? note}) async {
+    final body = await _post('/seller/hq-inventory/inbound',
+        {'supply_product_id': productId, 'qty': qty, 'note': ?note});
+    return body['message'] as String? ?? '입고했습니다.';
+  }
+
+  Future<String> hqInventorySeed() async {
+    final body = await _post('/seller/hq-inventory/seed', {});
+    return body['message'] as String? ?? '기본재고를 설정했습니다.';
+  }
+
+  Future<String> hqInventoryNotify(int productId) async {
+    final body = await _post('/seller/hq-inventory/$productId/notify-restock', {});
+    return body['message'] as String? ?? '입고 알림을 전송했습니다.';
   }
 
   // ---- 매장별 입금현황 ----
