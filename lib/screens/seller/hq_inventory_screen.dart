@@ -268,40 +268,75 @@ class _HqInventoryScreenState extends State<HqInventoryScreen> {
     required int min,
     required Future<String> Function(int qty, String? note) action,
   }) async {
-    final qtyCtrl = TextEditingController(text: initial > 0 ? '$initial' : '');
-    final noteCtrl = TextEditingController();
-    final ok = await showDialog<bool>(
+    final result = await showDialog<(int, String)>(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text(title, style: const TextStyle(fontSize: 16)),
-        content: Column(mainAxisSize: MainAxisSize.min, children: [
-          TextField(
-            controller: qtyCtrl,
-            keyboardType: TextInputType.number,
-            autofocus: true,
-            decoration: InputDecoration(labelText: hint, border: const OutlineInputBorder()),
-          ),
-          const SizedBox(height: 10),
-          TextField(
-            controller: noteCtrl,
-            decoration: const InputDecoration(labelText: '메모 (선택)', border: OutlineInputBorder()),
-          ),
-        ]),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('취소')),
-          FilledButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('저장')),
-        ],
-      ),
+      builder: (_) => _QtyDialog(title: title, hint: hint, initial: initial, min: min),
     );
-    final qty = int.tryParse(qtyCtrl.text.trim()) ?? -1;
-    final note = noteCtrl.text.trim();
-    qtyCtrl.dispose();
-    noteCtrl.dispose();
-    if (ok != true) return;
-    if (qty < min) {
-      _toast('수량을 확인해 주세요.', error: true);
+    if (result == null) return;
+    _run(() => action(result.$1, result.$2.isEmpty ? null : result.$2));
+  }
+}
+
+/// 재고 조정/입고 수량 입력 다이얼로그 — 컨트롤러를 자체 dispose 하여
+/// showDialog 후 수동 dispose(닫힘 애니메이션 중 오류) 문제를 방지.
+class _QtyDialog extends StatefulWidget {
+  const _QtyDialog(
+      {required this.title, required this.hint, required this.initial, required this.min});
+  final String title;
+  final String hint;
+  final int initial;
+  final int min;
+
+  @override
+  State<_QtyDialog> createState() => _QtyDialogState();
+}
+
+class _QtyDialogState extends State<_QtyDialog> {
+  late final TextEditingController _qty =
+      TextEditingController(text: widget.initial > 0 ? '${widget.initial}' : '');
+  final _note = TextEditingController();
+  String? _err;
+
+  @override
+  void dispose() {
+    _qty.dispose();
+    _note.dispose();
+    super.dispose();
+  }
+
+  void _submit() {
+    final qty = int.tryParse(_qty.text.trim()) ?? -1;
+    if (qty < widget.min) {
+      setState(() => _err = '수량을 확인해 주세요.');
       return;
     }
-    _run(() => action(qty, note.isEmpty ? null : note));
+    Navigator.pop(context, (qty, _note.text.trim()));
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: Text(widget.title, style: const TextStyle(fontSize: 16)),
+      content: Column(mainAxisSize: MainAxisSize.min, children: [
+        TextField(
+          controller: _qty,
+          keyboardType: TextInputType.number,
+          autofocus: true,
+          decoration: InputDecoration(
+              labelText: widget.hint,
+              errorText: _err,
+              border: const OutlineInputBorder()),
+        ),
+        const SizedBox(height: 10),
+        TextField(
+          controller: _note,
+          decoration: const InputDecoration(labelText: '메모 (선택)', border: OutlineInputBorder()),
+        ),
+      ]),
+      actions: [
+        TextButton(onPressed: () => Navigator.pop(context), child: const Text('취소')),
+        FilledButton(onPressed: _submit, child: const Text('저장')),
+      ],
+    );
   }
 }
