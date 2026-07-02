@@ -247,6 +247,26 @@ class _SellerOrderDetailScreenState extends State<SellerOrderDetailScreen> {
                 : '택배비 등록'),
           ),
           const SizedBox(height: 10),
+          // 거래명세서 이메일 (우선 노출)
+          OutlinedButton.icon(
+            onPressed: _busy || o.storeEmail == null ? null : () => _emailStatement(o),
+            style: OutlinedButton.styleFrom(
+              foregroundColor: AppColors.accent,
+              side: const BorderSide(color: AppColors.mango300),
+              minimumSize: const Size.fromHeight(50),
+            ),
+            icon: const Icon(Icons.mail_outline, size: 18),
+            label: Text(o.storeEmail == null
+                ? '매장 이메일 없음'
+                : (o.statementEmailed ? '거래명세서 재전송' : '거래명세서 이메일 보내기')),
+          ),
+          if (o.statementEmailed)
+            Padding(
+              padding: const EdgeInsets.only(top: 6),
+              child: Text('✓ 매장 전송됨${o.statementEmailCount > 1 ? ' (${o.statementEmailCount}회)' : ''}',
+                  style: const TextStyle(fontSize: 12, color: Color(0xFF1E8E4E))),
+            ),
+          const SizedBox(height: 10),
           // 세금계산서 발행
           if (o.taxInvoiced)
             Container(
@@ -269,26 +289,6 @@ class _SellerOrderDetailScreenState extends State<SellerOrderDetailScreen> {
               style: FilledButton.styleFrom(minimumSize: const Size.fromHeight(50)),
               icon: const Icon(Icons.receipt_long, size: 18),
               label: Text(o.hasPendingPrice ? '싯가 단가 확정 후 발행 가능' : '세금계산서 발행 (본사 → 매장)'),
-            ),
-          const SizedBox(height: 10),
-          // 거래명세서 이메일
-          OutlinedButton.icon(
-            onPressed: _busy || o.storeEmail == null ? null : () => _emailStatement(o),
-            style: OutlinedButton.styleFrom(
-              foregroundColor: AppColors.accent,
-              side: const BorderSide(color: AppColors.mango300),
-              minimumSize: const Size.fromHeight(50),
-            ),
-            icon: const Icon(Icons.mail_outline, size: 18),
-            label: Text(o.storeEmail == null
-                ? '매장 이메일 없음'
-                : (o.statementEmailed ? '거래명세서 재전송' : '거래명세서 이메일 보내기')),
-          ),
-          if (o.statementEmailed)
-            Padding(
-              padding: const EdgeInsets.only(top: 6),
-              child: Text('✓ 매장 전송됨${o.statementEmailCount > 1 ? ' (${o.statementEmailCount}회)' : ''}',
-                  style: const TextStyle(fontSize: 12, color: Color(0xFF1E8E4E))),
             ),
         ],
       ),
@@ -693,7 +693,8 @@ class _ItemEditDialogState extends State<_ItemEditDialog> {
   Widget build(BuildContext context) {
     return AlertDialog(
       title: const Text('품목 수정'),
-      content: Column(
+      content: SingleChildScrollView(
+        child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -721,6 +722,7 @@ class _ItemEditDialogState extends State<_ItemEditDialog> {
           const Text('저장 시 발주 합계가 재계산되고 매장에도 반영·알림됩니다.',
               style: TextStyle(fontSize: 12, color: AppColors.inkSoft)),
         ],
+      ),
       ),
       actions: [
         TextButton(onPressed: () => Navigator.pop(context), child: const Text('취소')),

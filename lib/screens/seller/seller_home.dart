@@ -107,6 +107,7 @@ class _SellerHomeState extends State<SellerHome> {
           label: '출고',
           page: _shipTab,
         ),
+        // (탭 클릭 시 바로 출고 화면)
         _TabDef(
           icon: Icons.payments_outlined,
           activeIcon: Icons.payments,
@@ -217,12 +218,10 @@ class _SellerHomeState extends State<SellerHome> {
                   _Stat(
                     label: '출고 대기',
                     value: d?.confirmedSalesOrders,
-                    hint: '확인됨',
+                    hint: '출고 생성',
                     color: const Color(0xFF1B6CC4),
-                    onTap: () => _go(SellerSalesOrdersScreen(
-                        repository: widget.repository,
-                        onChanged: widget.onChanged,
-                        initialStatus: 'confirmed')),
+                    onTap: () => _go(CreateShipmentScreen(
+                        repository: widget.repository, onChanged: widget.onChanged)),
                   ),
                 ]),
                 const SizedBox(height: 12),
@@ -356,22 +355,12 @@ class _SellerHomeState extends State<SellerHome> {
         ),
       ]);
 
-  // ── 출고·배송 ──
-  Widget _shipTab() => _tabBody([
-        _NavCard(
-          icon: Icons.local_shipping_outlined,
-          title: '출고',
-          sub: '출고 생성·송장 입력·확정',
-          onTap: () => _go(SellerShipmentsScreen(
-              repository: widget.repository, onChanged: widget.onChanged)),
-        ),
-        _NavCard(
-          icon: Icons.add_box_outlined,
-          title: '출고 생성',
-          sub: '확정 판매주문 → 출고 만들기',
-          onTap: () => _go(CreateShipmentScreen(repository: widget.repository)),
-        ),
-      ]);
+  // ── 출고·배송 — 탭 클릭 시 바로 출고 화면(임베드) ──
+  Widget _shipTab() => CreateShipmentScreen(
+        repository: widget.repository,
+        onChanged: widget.onChanged,
+        embedded: true,
+      );
 
   // ── 정산·전자문서 ──
   Widget _settleTab() => _tabBody([
