@@ -145,6 +145,37 @@ class _GroupHeader extends StatelessWidget {
   }
 }
 
+/// 품목 썸네일 (56x56, 라운드). 이미지 없거나 로드 실패 시 플레이스홀더.
+class _ProductThumb extends StatelessWidget {
+  const _ProductThumb({required this.url});
+  final String? url;
+
+  @override
+  Widget build(BuildContext context) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        width: 56,
+        height: 56,
+        color: AppColors.mango50,
+        child: (url == null || url!.isEmpty)
+            ? _placeholder()
+            : Image.network(
+                url!,
+                fit: BoxFit.cover,
+                loadingBuilder: (context, child, progress) =>
+                    progress == null ? child : _placeholder(),
+                errorBuilder: (context, _, _) => _placeholder(),
+              ),
+      ),
+    );
+  }
+
+  Widget _placeholder() => const Center(
+        child: Icon(Icons.inventory_2_outlined, color: AppColors.mango300, size: 24),
+      );
+}
+
 class _ProductTile extends StatelessWidget {
   const _ProductTile({required this.product, required this.cart});
   final SupplyProduct product;
@@ -176,6 +207,8 @@ class _ProductTile extends StatelessWidget {
               Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  _ProductThumb(url: product.imageUrl),
+                  const SizedBox(width: 12),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
