@@ -10,9 +10,11 @@ import '../../widgets/product_thumb.dart';
 import 'seller_widgets.dart';
 
 class SellerOrdersScreen extends StatefulWidget {
-  const SellerOrdersScreen({super.key, required this.repository, this.isHq = false});
+  const SellerOrdersScreen(
+      {super.key, required this.repository, this.isHq = false, this.onChanged});
   final SellerRepository repository;
   final bool isHq;
+  final VoidCallback? onChanged;
 
   @override
   State<SellerOrdersScreen> createState() => _SellerOrdersScreenState();
@@ -50,7 +52,10 @@ class _SellerOrdersScreenState extends State<SellerOrdersScreen> {
                 order: order,
                 onTap: () => Navigator.of(context).push(MaterialPageRoute(
                   builder: (_) => SellerOrderDetailScreen(
-                      repository: widget.repository, id: order.id, isHq: widget.isHq),
+                      repository: widget.repository,
+                      id: order.id,
+                      isHq: widget.isHq,
+                      onChanged: widget.onChanged),
                 )),
               ),
             ),
@@ -108,10 +113,15 @@ class _Tile extends StatelessWidget {
 
 class SellerOrderDetailScreen extends StatefulWidget {
   const SellerOrderDetailScreen(
-      {super.key, required this.repository, required this.id, this.isHq = false});
+      {super.key,
+      required this.repository,
+      required this.id,
+      this.isHq = false,
+      this.onChanged});
   final SellerRepository repository;
   final int id;
   final bool isHq;
+  final VoidCallback? onChanged;
 
   @override
   State<SellerOrderDetailScreen> createState() => _SellerOrderDetailScreenState();
@@ -127,11 +137,71 @@ class _SellerOrderDetailScreenState extends State<SellerOrderDetailScreen> {
     _future = widget.repository.orderDetail(widget.id);
   }
 
+  Future<void> _confirmOrder(SellerOrder o) async {
+    if (o.salesOrderId == null) return;
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('발주확인'),
+        content: const Text('이 발주를 확인할까요?\n확인하면 출고 대기로 이동하고, 매장에 입고예정이 생성됩니다.'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('취소')),
+          FilledButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('발주확인')),
+        ],
+      ),
+    );
+    if (ok != true) return;
+    setState(() => _busy = true);
+    try {
+      final msg = await widget.repository.confirmSalesOrder(o.salesOrderId!);
+      widget.onChanged?.call();
+      setState(() { _future = widget.repository.orderDetail(widget.id); });
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text(msg.isEmpty ? '발주를 확인했습니다. 출고 대기로 이동합니다.' : msg),
+            behavior: SnackBarBehavior.floating,
+            backgroundColor: AppColors.mango800));
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text(e.toString().replaceFirst('OrderException: ', '')),
+            behavior: SnackBarBehavior.floating,
+            backgroundColor: const Color(0xFFB02A2A)));
+      }
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.cream,
       appBar: AppBar(title: const Text('발주 상세')),
+      bottomNavigationBar: FutureBuilder<SellerOrder>(
+        future: _future,
+        builder: (context, snap) {
+          if (snap.data?.canConfirm != true) return const SizedBox.shrink();
+          final o = snap.data!;
+          return Container(
+            color: AppColors.cream,
+            padding: EdgeInsets.fromLTRB(
+                16, 12, 16, 16 + MediaQuery.of(context).padding.bottom),
+            child: FilledButton.icon(
+              onPressed: _busy ? null : () => _confirmOrder(o),
+              style: FilledButton.styleFrom(minimumSize: const Size.fromHeight(54)),
+              icon: _busy
+                  ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(strokeWidth: 2.2, color: Colors.white))
+                  : const Icon(Icons.check_circle_outline),
+              label: const Text('발주확인 → 출고 대기'),
+            ),
+          );
+        },
+      ),
       body: FutureBuilder<SellerOrder>(
         future: _future,
         builder: (context, snap) {

@@ -78,6 +78,10 @@ class _CreateShipmentScreenState extends State<CreateShipmentScreen> {
   List<CandidateItem> get _visibleItems =>
       _visibleGroups.expand((g) => g.items).toList();
 
+  /// 그룹(매장) 내 서로 다른 판매주문 수.
+  int _orderCount(CandidateGroup g) =>
+      g.items.map((e) => e.salesOrderNo ?? e.orderNo ?? '#${e.id}').toSet().length;
+
   Future<void> _create() async {
     if (_selected.isEmpty) return;
     setState(() => _busy = true);
@@ -208,7 +212,11 @@ class _CreateShipmentScreenState extends State<CreateShipmentScreen> {
       );
 
   Widget _storeSelector() {
-    final total = _groups.fold<int>(0, (a, g) => a + g.items.length);
+    final totalOrders = _groups
+        .expand((g) => g.items)
+        .map((e) => e.salesOrderNo ?? e.orderNo ?? '#${e.id}')
+        .toSet()
+        .length;
     return Container(
       margin: const EdgeInsets.fromLTRB(16, 12, 16, 4),
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 2),
@@ -225,12 +233,13 @@ class _CreateShipmentScreenState extends State<CreateShipmentScreen> {
           items: [
             DropdownMenuItem<CandidateGroup>(
               value: null,
-              child: Text('전체 · $total건 대기', style: const TextStyle(color: AppColors.ink)),
+              child: Text('전체 · ${_groups.length}개 매장 · $totalOrders주문',
+                  style: const TextStyle(color: AppColors.ink)),
             ),
             for (final g in _groups)
               DropdownMenuItem(
                 value: g,
-                child: Text('${g.storeName ?? '매장 #${g.storeId}'} · ${g.items.length}건 대기',
+                child: Text('${g.storeName ?? '매장 #${g.storeId}'} · ${_orderCount(g)}주문',
                     style: const TextStyle(color: AppColors.ink)),
               ),
           ],
@@ -286,7 +295,7 @@ class _CreateShipmentScreenState extends State<CreateShipmentScreen> {
 
   Widget _storeHeader(CandidateGroup g) => Padding(
         padding: const EdgeInsets.only(top: 8, bottom: 4, left: 2),
-        child: Text('${g.storeName ?? '매장 #${g.storeId}'} · ${g.items.length}건',
+        child: Text('${g.storeName ?? '매장 #${g.storeId}'} · ${_orderCount(g)}주문 · ${g.items.length}품목',
             style: const TextStyle(
                 fontSize: 13, fontWeight: FontWeight.w800, color: AppColors.mango700)),
       );

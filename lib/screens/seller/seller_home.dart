@@ -7,7 +7,7 @@ import '../../theme/app_colors.dart';
 import '../../widgets/dashboard_header.dart';
 import 'bank_deposit_screen.dart';
 import 'categories_screen.dart';
-import 'create_shipment_screen.dart';
+import 'shipment_waiting_screen.dart';
 import 'hometax_screen.dart';
 import 'hq_inventory_screen.dart';
 import 'store_payments_screen.dart';
@@ -212,15 +212,16 @@ class _SellerHomeState extends State<SellerHome> {
                     onTap: () => _go(SellerSalesOrdersScreen(
                         repository: widget.repository,
                         onChanged: widget.onChanged,
-                        initialStatus: 'created')),
+                        initialStatus: 'created',
+                        inlineConfirm: true)),
                   ),
                   const SizedBox(width: 12),
                   _Stat(
                     label: '출고 대기',
                     value: d?.confirmedSalesOrders,
-                    hint: '출고 생성',
+                    hint: '미출고 주문',
                     color: const Color(0xFF1B6CC4),
-                    onTap: () => _go(CreateShipmentScreen(
+                    onTap: () => _go(ShipmentWaitingScreen(
                         repository: widget.repository, onChanged: widget.onChanged)),
                   ),
                 ]),
@@ -256,16 +257,9 @@ class _SellerHomeState extends State<SellerHome> {
         _NavCard(
           icon: Icons.inbox_outlined,
           title: '받은 발주',
-          sub: '매장에서 들어온 발주 확인',
+          sub: '매장 발주 확인(발주확인) · 품목·정산·문서',
           onTap: () => _go(SellerOrdersScreen(
-              repository: widget.repository, isHq: _isHq)),
-        ),
-        _NavCard(
-          icon: Icons.fact_check_outlined,
-          title: '판매주문',
-          sub: '판매주문 확인(confirm)',
-          onTap: () => _go(SellerSalesOrdersScreen(
-              repository: widget.repository, onChanged: widget.onChanged)),
+              repository: widget.repository, isHq: _isHq, onChanged: widget.onChanged)),
         ),
         FutureBuilder<SellerDashboard>(
           future: _future,
@@ -355,8 +349,8 @@ class _SellerHomeState extends State<SellerHome> {
         ),
       ]);
 
-  // ── 출고·배송 — 탭 클릭 시 바로 출고 화면(임베드) ──
-  Widget _shipTab() => CreateShipmentScreen(
+  // ── 출고·배송 — 탭 클릭 시 주문 단위 출고 대기(임베드) ──
+  Widget _shipTab() => ShipmentWaitingScreen(
         repository: widget.repository,
         onChanged: widget.onChanged,
         embedded: true,

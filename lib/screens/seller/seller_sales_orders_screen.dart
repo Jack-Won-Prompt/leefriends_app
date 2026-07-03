@@ -11,10 +11,17 @@ import 'seller_widgets.dart';
 
 class SellerSalesOrdersScreen extends StatefulWidget {
   const SellerSalesOrdersScreen(
-      {super.key, required this.repository, this.onChanged, this.initialStatus = 'all'});
+      {super.key,
+      required this.repository,
+      this.onChanged,
+      this.initialStatus = 'all',
+      this.inlineConfirm = false});
   final SellerRepository repository;
   final VoidCallback? onChanged;
   final String initialStatus;
+
+  /// true면 확인 대기(신규 발주)만 보여주고, 목록에서 바로 발주확인.
+  final bool inlineConfirm;
 
   @override
   State<SellerSalesOrdersScreen> createState() => _SellerSalesOrdersScreenState();
@@ -24,24 +31,53 @@ class _SellerSalesOrdersScreenState extends State<SellerSalesOrdersScreen> {
   late String _status = widget.initialStatus;
   List<StatusOption> _statuses = const [];
   int _reloadToken = 0;
+  final Set<int> _confirming = {};
 
   void _select(String s) => setState(() => _status = s);
   void _reload() => setState(() => _reloadToken++);
+
+  void _toast(String m, {bool error = false}) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text(m.replaceFirst('OrderException: ', '')),
+        behavior: SnackBarBehavior.floating,
+        backgroundColor: error ? const Color(0xFFB02A2A) : AppColors.mango800));
+  }
+
+  Future<void> _confirmInline(SellerSalesOrder so) async {
+    setState(() => _confirming.add(so.id));
+    try {
+      final msg = await widget.repository.confirmSalesOrder(so.id);
+      widget.onChanged?.call();
+      if (mounted) {
+        _toast(msg.isEmpty ? '발주를 확인했습니다. 출고 대기로 이동합니다.' : msg);
+        _reload(); // 확인된 발주는 신규 목록에서 사라짐
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _confirming.remove(so.id));
+        _toast(e.toString(), error: true);
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.cream,
-      appBar: AppBar(title: const Text('판매주문')),
+      appBar: AppBar(title: Text(widget.inlineConfirm ? '확인 대기 (신규 발주)' : '판매주문')),
       body: Column(
         children: [
-          StatusFilterBar(
-              statuses: _statuses, selected: _status, onSelect: _select),
+          if (!widget.inlineConfirm)
+            StatusFilterBar(
+                statuses: _statuses, selected: _status, onSelect: _select),
           Expanded(
             child: PagedListView<SellerSalesOrder>(
               key: ValueKey('$_status-$_reloadToken'),
               padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
-              emptyText: '판매주문이 없습니다',
+              emptyText: widget.inlineConfirm
+                  ? '확인 대기 중인 신규 발주가 없습니다'
+                  : '판매주문이 없습니다',
               fetch: (page) async {
                 final r = await widget.repository.salesOrders(status: _status, page: page);
                 if (page == 1 && _statuses.isEmpty && r.statuses.isNotEmpty) {
@@ -63,6 +99,10 @@ class _SellerSalesOrdersScreenState extends State<SellerSalesOrdersScreen> {
                   ));
                   _reload();
                 },
+                onConfirm: (widget.inlineConfirm && so.status == 'created')
+                    ? () => _confirmInline(so)
+                    : null,
+                confirming: _confirming.contains(so.id),
               ),
             ),
           ),
@@ -73,9 +113,18 @@ class _SellerSalesOrdersScreenState extends State<SellerSalesOrdersScreen> {
 }
 
 class _Tile extends StatelessWidget {
-  const _Tile({required this.so, required this.onTap});
+  const _Tile({
+    required this.so,
+    required this.onTap,
+    this.onConfirm,
+    this.confirming = false,
+  });
   final SellerSalesOrder so;
   final VoidCallback onTap;
+
+  /// 목록에서 바로 발주확인 (null이면 버튼 숨김).
+  final VoidCallback? onConfirm;
+  final bool confirming;
 
   @override
   Widget build(BuildContext context) {
@@ -109,6 +158,23 @@ class _Tile extends StatelessWidget {
                   style: const TextStyle(
                       fontSize: 14, fontWeight: FontWeight.w800, color: AppColors.accent)),
             ]),
+            if (onConfirm != null) ...[
+              const SizedBox(height: 12),
+              SizedBox(
+                width: double.infinity,
+                child: FilledButton.icon(
+                  onPressed: confirming ? null : onConfirm,
+                  style: FilledButton.styleFrom(minimumSize: const Size.fromHeight(44)),
+                  icon: confirming
+                      ? const SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                      : const Icon(Icons.check_circle_outline, size: 18),
+                  label: Text(confirming ? '확인 중…' : '발주확인 → 출고 대기'),
+                ),
+              ),
+            ],
           ],
         ),
       ),

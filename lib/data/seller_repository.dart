@@ -401,15 +401,24 @@ class SellerRepository {
       (await _delete('/seller/inquiries/$id'))['message'] as String? ?? '삭제되었습니다.';
 
   // 출고
-  Future<({List<SellerShipment> shipments, List<StatusOption> statuses, bool hasMore})>
-      shipments({String status = 'all', int page = 1}) async {
-    final body = await _get('/seller/shipments?status=$status&page=$page');
+  Future<
+      ({
+        List<SellerShipment> shipments,
+        List<StatusOption> statuses,
+        List<StatusOption> stores,
+        bool hasMore
+      })> shipments({String status = 'all', String store = 'all', int page = 1}) async {
+    final body = await _get('/seller/shipments?status=$status&store=$store&page=$page');
+    final meta = body['meta'] as Map<String, dynamic>?;
     return (
       shipments: (body['data'] as List)
           .map((e) => SellerShipment.fromJson(e as Map<String, dynamic>))
           .toList(),
       statuses: _statuses(body),
-      hasMore: Paged.hasMoreFromMeta(body['meta'] as Map<String, dynamic>?),
+      stores: ((meta?['stores'] as List?) ?? [])
+          .map((e) => StatusOption.fromJson(e as Map<String, dynamic>))
+          .toList(),
+      hasMore: Paged.hasMoreFromMeta(meta),
     );
   }
 

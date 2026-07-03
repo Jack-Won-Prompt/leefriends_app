@@ -7,7 +7,6 @@ import '../../theme/app_colors.dart';
 import '../../widgets/product_thumb.dart';
 import '../../widgets/paged_list_view.dart';
 import 'barcode_scan_screen.dart';
-import 'create_shipment_screen.dart';
 import 'seller_widgets.dart';
 
 class SellerShipmentsScreen extends StatefulWidget {
@@ -23,7 +22,9 @@ class SellerShipmentsScreen extends StatefulWidget {
 
 class _SellerShipmentsScreenState extends State<SellerShipmentsScreen> {
   late String _status = widget.initialStatus;
+  String _store = 'all';
   List<StatusOption> _statuses = const [];
+  List<StatusOption> _stores = const [];
   int _reloadToken = 0;
 
   void _select(String s) => setState(() => _status = s);
@@ -34,31 +35,25 @@ class _SellerShipmentsScreenState extends State<SellerShipmentsScreen> {
     return Scaffold(
       backgroundColor: AppColors.cream,
       appBar: AppBar(title: const Text('출고')),
-      floatingActionButton: FloatingActionButton.extended(
-        backgroundColor: AppColors.accent,
-        onPressed: () async {
-          await Navigator.of(context).push(MaterialPageRoute(
-            builder: (_) => CreateShipmentScreen(repository: widget.repository),
-          ));
-          _reload();
-          widget.onChanged?.call();
-        },
-        icon: const Icon(Icons.add),
-        label: const Text('출고 생성', style: TextStyle(fontWeight: FontWeight.w700)),
-      ),
       body: Column(
         children: [
+          if (_stores.isNotEmpty) _storeSelector(),
           StatusFilterBar(statuses: _statuses, selected: _status, onSelect: _select),
           Expanded(
             child: PagedListView<SellerShipment>(
-              key: ValueKey('$_status-$_reloadToken'),
-              padding: const EdgeInsets.fromLTRB(16, 4, 16, 96),
+              key: ValueKey('$_status-$_store-$_reloadToken'),
+              padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
               emptyText: '출고 내역이 없습니다',
               fetch: (page) async {
-                final r = await widget.repository.shipments(status: _status, page: page);
-                if (page == 1 && _statuses.isEmpty && r.statuses.isNotEmpty) {
+                final r = await widget.repository
+                    .shipments(status: _status, store: _store, page: page);
+                if (page == 1) {
                   WidgetsBinding.instance.addPostFrameCallback((_) {
-                    if (mounted) setState(() => _statuses = r.statuses);
+                    if (!mounted) return;
+                    setState(() {
+                      if (_statuses.isEmpty && r.statuses.isNotEmpty) _statuses = r.statuses;
+                      if (r.stores.isNotEmpty) _stores = r.stores;
+                    });
                   });
                 }
                 return Paged(items: r.shipments, hasMore: r.hasMore);
@@ -79,6 +74,33 @@ class _SellerShipmentsScreenState extends State<SellerShipmentsScreen> {
       ),
     );
   }
+
+  Widget _storeSelector() => Container(
+        margin: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 2),
+        decoration: BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: AppColors.line),
+        ),
+        child: DropdownButtonHideUnderline(
+          child: DropdownButton<String>(
+            isExpanded: true,
+            value: _store,
+            style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: AppColors.ink),
+            onChanged: (v) => setState(() => _store = v ?? 'all'),
+            items: [
+              const DropdownMenuItem(
+                  value: 'all',
+                  child: Text('전체 매장', style: TextStyle(color: AppColors.ink))),
+              for (final s in _stores)
+                DropdownMenuItem(
+                    value: s.key,
+                    child: Text(s.label, style: const TextStyle(color: AppColors.ink))),
+            ],
+          ),
+        ),
+      );
 }
 
 class _Tile extends StatelessWidget {
