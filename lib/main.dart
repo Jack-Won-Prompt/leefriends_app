@@ -29,7 +29,7 @@ class LeeFriendsApp extends StatefulWidget {
   State<LeeFriendsApp> createState() => _LeeFriendsAppState();
 }
 
-class _LeeFriendsAppState extends State<LeeFriendsApp> {
+class _LeeFriendsAppState extends State<LeeFriendsApp> with WidgetsBindingObserver {
   final _repository = MenuRepository();
   final _auth = AuthController();
   final _messengerKey = GlobalKey<ScaffoldMessengerState>();
@@ -40,14 +40,24 @@ class _LeeFriendsAppState extends State<LeeFriendsApp> {
     _auth.restore();
     // FCM 초기화 (Firebase 미설정 환경에서도 안전하게 no-op)
     PushService.instance.init(_auth, messengerKey: _messengerKey);
-    // Play 스토어 인앱 업데이트 확인 (스토어 설치본에서만 동작, 그 외 무시)
+    // Play 스토어 인앱 업데이트 (강제 + 상시). 앱 시작 시 확인.
+    WidgetsBinding.instance.addObserver(this);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       UpdateService.checkAndUpdate();
     });
   }
 
   @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    // 포그라운드 복귀(resume)마다 새 버전 재확인 → 강제 업데이트 상시 적용
+    if (state == AppLifecycleState.resumed) {
+      UpdateService.checkAndUpdate();
+    }
+  }
+
+  @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _repository.dispose();
     _auth.dispose();
     super.dispose();
