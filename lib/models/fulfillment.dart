@@ -264,6 +264,7 @@ class SellerShipment {
   final int itemCount;
   final int totalQty;
   final String? confirmedAt;
+  final String? deliveredAt;
   final String? createdAt;
   final String? note;
   final List<FulfillItem> items;
@@ -279,6 +280,7 @@ class SellerShipment {
     required this.itemCount,
     required this.totalQty,
     required this.confirmedAt,
+    required this.deliveredAt,
     required this.createdAt,
     required this.note,
     required this.items,
@@ -295,6 +297,7 @@ class SellerShipment {
         itemCount: _i(j['item_count']),
         totalQty: _i(j['total_qty']),
         confirmedAt: j['confirmed_at'] as String?,
+        deliveredAt: j['delivered_at'] as String?,
         createdAt: j['created_at'] as String?,
         note: j['note'] as String?,
         items: (j['items'] as List? ?? [])

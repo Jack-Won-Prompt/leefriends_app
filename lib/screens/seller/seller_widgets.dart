@@ -56,6 +56,8 @@ class FulfillStatusChip extends StatelessWidget {
       case 'shipped':
       case 'shipping':
         return (const Color(0xFFE7F6EC), const Color(0xFF1E8E4E));
+      case 'delivered':
+        return (const Color(0xFFDFF5F1), const Color(0xFF0E8A78));
       case 'received':
       case 'completed':
         return (const Color(0xFFE9E9EC), const Color(0xFF44474F));

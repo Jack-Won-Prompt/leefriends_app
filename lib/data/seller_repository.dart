@@ -455,6 +455,12 @@ class SellerRepository {
     return SellerShipment.fromJson(body['data'] as Map<String, dynamic>);
   }
 
+  /// 배송중 → 배송완료 (본사 처리).
+  Future<SellerShipment> deliverShipment(int id) async {
+    final body = await _patch('/seller/shipments/$id/deliver', const {});
+    return SellerShipment.fromJson(body['data'] as Map<String, dynamic>);
+  }
+
   // ============ 전자세금계산서 ============
   Future<Paged<SellerTaxInvoice>> taxInvoices({int page = 1}) async {
     final body = await _get('/seller/tax-invoices?page=$page');

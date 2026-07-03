@@ -195,6 +195,42 @@ class _ShipmentConfirmScreenState extends State<ShipmentConfirmScreen> {
     }
   }
 
+  Future<void> _deliver() async {
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('배송완료 처리'),
+        content: const Text('이 출고를 배송완료로 처리할까요?\n매장에 도착 알림이 전송됩니다.'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('취소')),
+          FilledButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('배송완료')),
+        ],
+      ),
+    );
+    if (ok != true) return;
+    setState(() => _busy = true);
+    try {
+      final s = await widget.repository.deliverShipment(widget.id);
+      widget.onChanged?.call();
+      setState(() { _future = Future.value(s); });
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+            content: Text('배송완료로 처리했습니다. 매장에 도착 알림을 보냈습니다.'),
+            behavior: SnackBarBehavior.floating,
+            backgroundColor: AppColors.mango800));
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text(e.toString().replaceFirst('OrderException: ', '')),
+            behavior: SnackBarBehavior.floating,
+            backgroundColor: const Color(0xFFB02A2A)));
+      }
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -291,20 +327,27 @@ class _ShipmentConfirmScreenState extends State<ShipmentConfirmScreen> {
       bottomNavigationBar: FutureBuilder<SellerShipment>(
         future: _future,
         builder: (context, snap) {
-          if (snap.data?.status != 'created') return const SizedBox.shrink();
+          final status = snap.data?.status;
+          if (status != 'created' && status != 'confirmed') {
+            return const SizedBox.shrink();
+          }
+          final isConfirm = status == 'created';
           return Container(
             color: AppColors.cream,
             padding: EdgeInsets.fromLTRB(
                 16, 12, 16, 16 + MediaQuery.of(context).padding.bottom),
             child: FilledButton.icon(
-              onPressed: _busy ? null : _confirm,
-              style: FilledButton.styleFrom(minimumSize: const Size.fromHeight(54)),
+              onPressed: _busy ? null : (isConfirm ? _confirm : _deliver),
+              style: FilledButton.styleFrom(
+                minimumSize: const Size.fromHeight(54),
+                backgroundColor: isConfirm ? null : const Color(0xFF1E8E4E),
+              ),
               icon: _busy
                   ? const SizedBox(
                       width: 20, height: 20,
                       child: CircularProgressIndicator(strokeWidth: 2.2, color: Colors.white))
-                  : const Icon(Icons.local_shipping_outlined),
-              label: const Text('출고 확정 (배송시작)'),
+                  : Icon(isConfirm ? Icons.local_shipping_outlined : Icons.check_circle_outline),
+              label: Text(isConfirm ? '출고 확정 (배송시작)' : '배송완료 처리'),
             ),
           );
         },
