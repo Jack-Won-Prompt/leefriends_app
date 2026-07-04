@@ -78,3 +78,53 @@ class StoreLocation {
         image: j['image'] as String?,
       );
 }
+
+/// 네이버 블로그 글 (공개 홈 피드).
+class BlogPostItem {
+  final int id;
+  final String title;
+  final String url;
+  final String? thumbnail;
+  final String? summary;
+  final String? postedAt;
+
+  const BlogPostItem({
+    required this.id,
+    required this.title,
+    required this.url,
+    this.thumbnail,
+    this.summary,
+    this.postedAt,
+  });
+
+  factory BlogPostItem.fromJson(Map<String, dynamic> j) => BlogPostItem(
+        id: j['id'] as int,
+        title: j['title'] as String? ?? '',
+        url: j['url'] as String? ?? '',
+        thumbnail: j['thumbnail'] as String?,
+        summary: j['summary'] as String?,
+        postedAt: j['posted_at'] as String?,
+      );
+}
+
+/// 네이버 클립 (공개 홈 피드).
+class NaverClipItem {
+  final int id;
+  final String title;
+  final String url;
+  final String? thumbnail;
+
+  const NaverClipItem({
+    required this.id,
+    required this.title,
+    required this.url,
+    this.thumbnail,
+  });
+
+  factory NaverClipItem.fromJson(Map<String, dynamic> j) => NaverClipItem(
+        id: j['id'] as int,
+        title: j['title'] as String? ?? '',
+        url: j['url'] as String? ?? '',
+        thumbnail: j['thumbnail'] as String?,
+      );
+}

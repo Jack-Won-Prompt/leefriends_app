@@ -47,6 +47,20 @@ class ContentRepository {
     return (stores: stores, regions: regions);
   }
 
+  Future<List<BlogPostItem>> blogPosts() async {
+    final body = await _get('/blog-posts');
+    return (body['data'] as List)
+        .map((e) => BlogPostItem.fromJson(e as Map<String, dynamic>))
+        .toList();
+  }
+
+  Future<List<NaverClipItem>> clips() async {
+    final body = await _get('/naver-clips');
+    return (body['data'] as List)
+        .map((e) => NaverClipItem.fromJson(e as Map<String, dynamic>))
+        .toList();
+  }
+
   Future<Map<String, dynamic>> _get(String path) async {
     final res = await _client
         .get(Uri.parse('${ApiConfig.apiUrl}$path'),
