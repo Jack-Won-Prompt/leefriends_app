@@ -282,7 +282,7 @@ class _SellerHomeState extends State<SellerHome> {
         if (widget.onAttendance != null)
           _NavCard(
             icon: Icons.how_to_reg_outlined,
-            title: '근태관리',
+            title: '출근관리',
             sub: '출퇴근·휴무 승인 / 급여',
             onTap: widget.onAttendance!,
           ),

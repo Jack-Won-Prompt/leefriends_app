@@ -37,7 +37,7 @@ class AttendanceScreen extends StatelessWidget {
         backgroundColor: AppColors.cream,
         appBar: AppBar(
           automaticallyImplyLeading: !homeMode,
-          title: Text(homeMode ? '${userName ?? ''} · 근태' : '근태관리'),
+          title: Text(homeMode ? '${userName ?? ''} · 출근' : '출근관리'),
           actions: [
             // 정직원(승인/급여 모드): 직원 관리 진입
             if (!isPartTime)

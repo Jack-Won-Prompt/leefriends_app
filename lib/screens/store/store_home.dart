@@ -215,7 +215,7 @@ class _StoreHomeState extends State<StoreHome> {
           const SizedBox(height: 12),
           _FlatAction(
             icon: Icons.how_to_reg_outlined,
-            title: '근태관리',
+            title: '출근관리',
             sub: '출퇴근 · 휴무 · 급여',
             onTap: widget.onAttendance!,
           ),
