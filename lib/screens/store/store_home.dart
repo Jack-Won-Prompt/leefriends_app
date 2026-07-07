@@ -7,6 +7,7 @@ import '../../models/store_ops.dart' show StoreDashboard, won;
 import '../../theme/app_colors.dart';
 import '../../widgets/dashboard_header.dart';
 import '../order/catalog_screen.dart';
+import '../seller/fruit_storage_screen.dart';
 import '../order/orders_screen.dart';
 import 'inbound_screen.dart';
 import 'inventory_screen.dart';
@@ -242,6 +243,13 @@ class _StoreHomeState extends State<StoreHome> {
             sub: '기간별 합계',
             onTap: () => _push(context,
                 PurchasesScreen(repository: widget.ops, orderRepository: widget.order)),
+          ),
+          _FeatureCard(
+            icon: Icons.ac_unit_outlined,
+            title: '과일 보관 가이드',
+            sub: '본사 공유 보관법',
+            onTap: () => _push(
+                context, FruitStorageScreen.readonly(repository: widget.ops)),
           ),
         ]),
       ]);

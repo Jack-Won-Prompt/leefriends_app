@@ -176,11 +176,18 @@ class _BankDepositScreenState extends State<BankDepositScreen> {
       if (d.deposits.isNotEmpty) ...[
         Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
           const Text('입금 내역', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w800)),
-          TextButton.icon(
-            onPressed: _busy ? null : () => _run(() => widget.repository.bankAutoMatch(_acc)),
-            icon: const Icon(Icons.auto_fix_high, size: 16),
-            label: const Text('자동 대사'),
-          ),
+          Row(children: [
+            TextButton.icon(
+              onPressed: _busy ? null : () => _bulkMap(d),
+              icon: const Icon(Icons.playlist_add_check, size: 16),
+              label: const Text('일괄 매핑'),
+            ),
+            TextButton.icon(
+              onPressed: _busy ? null : () => _run(() => widget.repository.bankAutoMatch(_acc)),
+              icon: const Icon(Icons.auto_fix_high, size: 16),
+              label: const Text('자동 대사'),
+            ),
+          ]),
         ]),
         for (final dep in d.deposits) _depositTile(dep, d.stores),
       ] else
@@ -415,6 +422,28 @@ class _BankDepositScreenState extends State<BankDepositScreen> {
     }
   }
 
+  /// 미지정 입금자들을 골라 한 매장으로 일괄 매핑.
+  Future<void> _bulkMap(BankIndex d) async {
+    final names = <String>{
+      for (final dep in d.deposits)
+        if (dep.resolvedStore == null && (dep.depositor ?? '').trim().isNotEmpty)
+          dep.depositor!.trim(),
+    }.toList();
+    if (names.isEmpty) {
+      _run(() async => '매핑할 미지정 입금자가 없습니다.');
+      return;
+    }
+    final res = await showModalBottomSheet<({List<String> names, BankStoreRef store})>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => _BulkMapSheet(names: names, stores: d.stores),
+    );
+    if (res != null && res.names.isNotEmpty) {
+      _run(() => widget.repository.bankMapBulk(res.names, res.store.id));
+    }
+  }
+
   Widget _note(String t, {bool error = false}) => Container(
         width: double.infinity,
         margin: const EdgeInsets.only(bottom: 4),
@@ -505,6 +534,112 @@ class _StorePickerState extends State<_StorePicker> {
             ),
           ),
         ]),
+      ),
+    );
+  }
+}
+
+/// 여러 입금자 → 한 매장 일괄 매핑 시트.
+class _BulkMapSheet extends StatefulWidget {
+  const _BulkMapSheet({required this.names, required this.stores});
+  final List<String> names;
+  final List<BankStoreRef> stores;
+
+  @override
+  State<_BulkMapSheet> createState() => _BulkMapSheetState();
+}
+
+class _BulkMapSheetState extends State<_BulkMapSheet> {
+  late final Set<String> _selected = {...widget.names};
+  BankStoreRef? _store;
+
+  @override
+  Widget build(BuildContext context) {
+    final inset = MediaQuery.of(context).viewInsets.bottom;
+    final stores = widget.stores;
+    return Container(
+      constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.85),
+      decoration: const BoxDecoration(
+        color: AppColors.cream,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      padding: EdgeInsets.fromLTRB(16, 12, 16, 16 + inset),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Center(
+            child: Container(
+                width: 40, height: 4,
+                decoration: BoxDecoration(
+                    color: AppColors.line, borderRadius: BorderRadius.circular(100))),
+          ),
+          const SizedBox(height: 12),
+          const Text('입금자 일괄 매핑', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800)),
+          const SizedBox(height: 4),
+          Text('선택한 입금자 ${_selected.length}명을 아래 매장으로 매핑합니다.',
+              style: const TextStyle(fontSize: 13, color: AppColors.inkSoft)),
+          const SizedBox(height: 12),
+          // 매장 선택
+          DropdownButtonFormField<BankStoreRef>(
+            initialValue: _store,
+            isExpanded: true,
+            decoration: const InputDecoration(
+                labelText: '매장 선택', border: OutlineInputBorder(), isDense: true),
+            items: [
+              for (final s in stores)
+                DropdownMenuItem(value: s, child: Text(s.name, overflow: TextOverflow.ellipsis)),
+            ],
+            onChanged: (v) => setState(() => _store = v),
+          ),
+          const SizedBox(height: 12),
+          Row(children: [
+            const Text('입금자', style: TextStyle(fontWeight: FontWeight.w700)),
+            const Spacer(),
+            TextButton(
+              onPressed: () => setState(() {
+                if (_selected.length == widget.names.length) {
+                  _selected.clear();
+                } else {
+                  _selected
+                    ..clear()
+                    ..addAll(widget.names);
+                }
+              }),
+              child: Text(_selected.length == widget.names.length ? '전체 해제' : '전체 선택'),
+            ),
+          ]),
+          Flexible(
+            child: ListView(
+              shrinkWrap: true,
+              children: [
+                for (final n in widget.names)
+                  CheckboxListTile(
+                    value: _selected.contains(n),
+                    dense: true,
+                    activeColor: AppColors.accent,
+                    contentPadding: EdgeInsets.zero,
+                    title: Text(n, style: const TextStyle(fontSize: 14)),
+                    onChanged: (v) => setState(() {
+                      if (v == true) {
+                        _selected.add(n);
+                      } else {
+                        _selected.remove(n);
+                      }
+                    }),
+                  ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 8),
+          FilledButton(
+            onPressed: (_store == null || _selected.isEmpty)
+                ? null
+                : () => Navigator.pop(context, (names: _selected.toList(), store: _store!)),
+            style: FilledButton.styleFrom(minimumSize: const Size.fromHeight(52)),
+            child: Text('매핑 (${_selected.length}명 → ${_store?.name ?? '매장'})'),
+          ),
+        ],
       ),
     );
   }

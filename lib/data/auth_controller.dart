@@ -76,6 +76,25 @@ class AuthController extends ChangeNotifier {
     throw AuthException(_extractError(body, res.statusCode));
   }
 
+  /// 비밀번호 재설정 링크 이메일 발송. 성공 시 안내 메시지 반환.
+  Future<String> forgotPassword(String email) async {
+    final res = await _client
+        .post(
+          Uri.parse('${ApiConfig.apiUrl}/auth/forgot-password'),
+          headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json',
+          },
+          body: jsonEncode({'email': email}),
+        )
+        .timeout(ApiConfig.timeout);
+    final body = _decode(res);
+    if (res.statusCode == 200) {
+      return body['message'] as String? ?? '재설정 링크를 보냈습니다.';
+    }
+    throw AuthException(_extractError(body, res.statusCode));
+  }
+
   Future<void> logout() async {
     // 토큰이 유효할 때 기기 푸시 토큰부터 해제
     try {

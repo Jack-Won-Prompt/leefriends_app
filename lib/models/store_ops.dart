@@ -428,3 +428,49 @@ class PurchaseOrder {
         createdAt: j['created_at'] as String?,
       );
 }
+
+/// 과일 보관 가이드 (냉장/냉동 조건). 본사 관리 / 매장 공유 조회 공용.
+class FruitStorageItem {
+  final int id;
+  final String name;
+  final String? tempC;
+  final String? tempF;
+  final String? ventilation;
+  final String? humidity;
+  final String? dehumidification;
+  final String? storagePeriod;
+  final String? note;
+  final bool isShared;
+  final bool isActive;
+  final int sortOrder;
+
+  const FruitStorageItem({
+    required this.id,
+    required this.name,
+    this.tempC,
+    this.tempF,
+    this.ventilation,
+    this.humidity,
+    this.dehumidification,
+    this.storagePeriod,
+    this.note,
+    this.isShared = false,
+    this.isActive = true,
+    this.sortOrder = 0,
+  });
+
+  factory FruitStorageItem.fromJson(Map<String, dynamic> j) => FruitStorageItem(
+        id: j['id'] as int,
+        name: j['name'] as String? ?? '',
+        tempC: j['temp_c'] as String?,
+        tempF: j['temp_f'] as String?,
+        ventilation: j['ventilation'] as String?,
+        humidity: j['humidity'] as String?,
+        dehumidification: j['dehumidification'] as String?,
+        storagePeriod: j['storage_period'] as String?,
+        note: j['note'] as String?,
+        isShared: j['is_shared'] as bool? ?? false,
+        isActive: j['is_active'] as bool? ?? true,
+        sortOrder: (j['sort_order'] as num?)?.toInt() ?? 0,
+      );
+}

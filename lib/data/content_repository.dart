@@ -61,6 +61,31 @@ class ContentRepository {
         .toList();
   }
 
+  /// 가맹(창업) 문의 접수. 성공 시 안내 메시지 반환.
+  Future<String> submitFranchiseInquiry(Map<String, dynamic> data) async {
+    final res = await _client
+        .post(
+          Uri.parse('${ApiConfig.apiUrl}/franchise-inquiry'),
+          headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json',
+          },
+          body: jsonEncode(data),
+        )
+        .timeout(ApiConfig.timeout);
+    final body = jsonDecode(utf8.decode(res.bodyBytes)) as Map<String, dynamic>;
+    if (res.statusCode == 201 || res.statusCode == 200) {
+      return body['message'] as String? ?? '문의가 접수되었습니다.';
+    }
+    // 유효성 오류 메시지 우선 노출
+    final errors = body['errors'] as Map<String, dynamic>?;
+    if (errors != null && errors.isNotEmpty) {
+      final first = errors.values.first;
+      throw OrderException(first is List ? first.first.toString() : first.toString());
+    }
+    throw OrderException(body['message'] as String? ?? '문의 접수에 실패했습니다.');
+  }
+
   Future<Map<String, dynamic>> _get(String path) async {
     final res = await _client
         .get(Uri.parse('${ApiConfig.apiUrl}$path'),

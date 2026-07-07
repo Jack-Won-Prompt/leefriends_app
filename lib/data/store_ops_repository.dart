@@ -78,6 +78,17 @@ class StoreOpsRepository {
         .toList();
   }
 
+  /// 본사가 공유한 과일 보관 가이드 (매장 읽기 전용).
+  Future<List<FruitStorageItem>> fruitStorages({String? q}) async {
+    final path = (q == null || q.isEmpty)
+        ? '/fruit-storages'
+        : '/fruit-storages?q=${Uri.encodeQueryComponent(q)}';
+    final body = await _get(path);
+    return (body['data'] as List)
+        .map((e) => FruitStorageItem.fromJson(e as Map<String, dynamic>))
+        .toList();
+  }
+
   Future<List<InventoryMovementItem>> movements({String type = 'all'}) async {
     final body = await _get('/inventory/movements?type=$type');
     return (body['data'] as List)

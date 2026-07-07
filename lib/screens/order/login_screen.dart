@@ -46,6 +46,57 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
+  Future<void> _forgotPassword() async {
+    final ctrl = TextEditingController(text: _email.text.trim());
+    final email = await showDialog<String>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('비밀번호 찾기'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('가입한 이메일로 재설정 링크를 보내드립니다.',
+                style: TextStyle(fontSize: 13, color: AppColors.inkSoft)),
+            const SizedBox(height: 12),
+            TextField(
+              controller: ctrl,
+              keyboardType: TextInputType.emailAddress,
+              autofocus: true,
+              decoration: const InputDecoration(
+                  labelText: '이메일', border: OutlineInputBorder()),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('취소')),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, ctrl.text.trim()),
+            child: const Text('링크 보내기'),
+          ),
+        ],
+      ),
+    );
+    ctrl.dispose();
+    if (email == null || !email.contains('@')) return;
+    try {
+      final msg = await widget.auth.forgotPassword(email);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text(msg),
+            behavior: SnackBarBehavior.floating,
+            backgroundColor: AppColors.mango800));
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text(e is AuthException ? e.message : '요청에 실패했습니다.'),
+            behavior: SnackBarBehavior.floating,
+            backgroundColor: const Color(0xFFB02A2A)));
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -146,7 +197,16 @@ class _LoginScreenState extends State<LoginScreen> {
                         )
                       : const Text('로그인'),
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: 4),
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: TextButton(
+                    onPressed: _loading ? null : _forgotPassword,
+                    style: TextButton.styleFrom(foregroundColor: AppColors.inkSoft),
+                    child: const Text('비밀번호를 잊으셨나요?'),
+                  ),
+                ),
+                const SizedBox(height: 12),
                 Center(
                   child: Text(
                     '서버: ${Uri.parse(ApiConfig.baseUrl).host}',

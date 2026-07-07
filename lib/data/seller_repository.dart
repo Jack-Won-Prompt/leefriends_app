@@ -9,6 +9,7 @@ import '../models/hometax.dart';
 import '../models/hq_inventory.dart';
 import '../models/paged.dart';
 import '../models/store_payment.dart';
+import '../models/store_ops.dart' show FruitStorageItem;
 import 'api_config.dart';
 import 'auth_controller.dart';
 import 'order_repository.dart' show OrderException;
@@ -170,6 +171,13 @@ class SellerRepository {
     final body = await _post('/seller/bank/map',
         {'depositor_name': depositorName, 'store_id': storeId});
     return body['message'] as String? ?? '매핑을 저장했습니다.';
+  }
+
+  /// 여러 입금자 → 한 매장 일괄 매핑.
+  Future<String> bankMapBulk(List<String> depositorNames, int storeId) async {
+    final body = await _post('/seller/bank/map-bulk',
+        {'depositor_names': depositorNames, 'store_id': storeId});
+    return body['message'] as String? ?? '일괄 매핑했습니다.';
   }
 
   Future<String> bankMatch(int depositId, int orderId) async {
@@ -463,6 +471,64 @@ class SellerRepository {
     });
     return SellerShipment.fromJson(body['data'] as Map<String, dynamic>);
   }
+
+  // ============ 본사 물류 입고 ============
+  Future<
+      ({
+        List<LogisticsInboundStatement> rows,
+        List<SupplyProductLite> products,
+        bool hasMore
+      })> logisticsInbound({String status = 'all', int page = 1}) async {
+    final body = await _get('/seller/logistics/inbound?status=$status&page=$page');
+    final meta = body['meta'] as Map<String, dynamic>?;
+    return (
+      rows: (body['data'] as List)
+          .map((e) => LogisticsInboundStatement.fromJson(e as Map<String, dynamic>))
+          .toList(),
+      products: ((meta?['products'] as List?) ?? [])
+          .map((e) => SupplyProductLite.fromJson(e as Map<String, dynamic>))
+          .toList(),
+      hasMore: Paged.hasMoreFromMeta(meta),
+    );
+  }
+
+  Future<String> receiveLogisticsStatement(int id) async =>
+      (await _post('/seller/logistics/inbound/$id/receive', const {}))['message'] as String? ??
+      '입고 처리되었습니다.';
+
+  Future<String> manualInbound(int productId, int qty, {String? note}) async {
+    final body = await _post('/seller/logistics/inbound/manual', {
+      'supply_product_id': productId,
+      'qty': qty,
+      'note': ?note,
+    });
+    return body['message'] as String? ?? '입고했습니다.';
+  }
+
+  // ============ 과일 보관 관리 (본사) ============
+  Future<List<FruitStorageItem>> fruitStorages({String? q}) async {
+    final path = (q == null || q.isEmpty)
+        ? '/seller/fruit-storages'
+        : '/seller/fruit-storages?q=${Uri.encodeQueryComponent(q)}';
+    final body = await _get(path);
+    return (body['data'] as List)
+        .map((e) => FruitStorageItem.fromJson(e as Map<String, dynamic>))
+        .toList();
+  }
+
+  Future<String> saveFruitStorage(Map<String, dynamic> data, {int? id}) async {
+    final body = id == null
+        ? await _post('/seller/fruit-storages', data, expect: 201)
+        : await _put('/seller/fruit-storages/$id', data);
+    return body['message'] as String? ?? '저장되었습니다.';
+  }
+
+  Future<String> toggleFruitStorageShare(int id) async =>
+      (await _patch('/seller/fruit-storages/$id/toggle-share', const {}))['message'] as String? ??
+      '변경되었습니다.';
+
+  Future<String> deleteFruitStorage(int id) async =>
+      (await _delete('/seller/fruit-storages/$id'))['message'] as String? ?? '삭제되었습니다.';
 
   /// 배송중 → 배송완료 (본사 처리).
   Future<SellerShipment> deliverShipment(int id) async {

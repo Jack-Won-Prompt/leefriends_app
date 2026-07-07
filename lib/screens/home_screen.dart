@@ -9,6 +9,7 @@ import '../models/menu_item.dart';
 import '../theme/app_colors.dart';
 import '../widgets/badge_chip.dart';
 import '../widgets/menu_image.dart';
+import 'consumer/franchise_inquiry_screen.dart';
 import 'consumer/notices_screen.dart';
 import 'consumer/store_locator_screen.dart';
 import 'menu_detail_screen.dart';
@@ -107,6 +108,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       _ClipSection(future: _clips),
                       const SizedBox(height: 8),
                       const _BrandStory(),
+                      _FranchiseCta(content: widget.content),
                       const SizedBox(height: 32),
                     ],
                   );
@@ -714,6 +716,51 @@ class _FeedRow extends StatelessWidget {
               child: Icon(Icons.chevron_right, color: AppColors.inkSoft),
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+/// 창업·가맹 문의 CTA 배너.
+class _FranchiseCta extends StatelessWidget {
+  const _FranchiseCta({required this.content});
+  final ContentRepository content;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 14, 20, 0),
+      child: GestureDetector(
+        onTap: () => Navigator.of(context).push(MaterialPageRoute(
+          builder: (_) => FranchiseInquiryScreen(repository: content),
+        )),
+        child: Container(
+          padding: const EdgeInsets.all(18),
+          decoration: BoxDecoration(
+            color: AppColors.surface,
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(color: AppColors.mango300),
+          ),
+          child: Row(
+            children: [
+              const Text('🤝', style: TextStyle(fontSize: 28)),
+              const SizedBox(width: 14),
+              const Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('창업 · 가맹 문의',
+                        style: TextStyle(fontSize: 15, fontWeight: FontWeight.w800)),
+                    SizedBox(height: 4),
+                    Text('리프렌즈와 함께 시작하세요',
+                        style: TextStyle(fontSize: 13, color: AppColors.inkSoft)),
+                  ],
+                ),
+              ),
+              const Icon(Icons.chevron_right, color: AppColors.mango700),
+            ],
+          ),
         ),
       ),
     );

@@ -90,3 +90,60 @@ class HqInventoryIndex {
     );
   }
 }
+
+/// 본사 물류 입고 — 공급처 거래명세서(입고 대상).
+class LogisticsInboundStatement {
+  final int id;
+  final String statementNo;
+  final String? supplierName;
+  final int itemCount;
+  final int total;
+  final bool received;
+  final String? receivedAt;
+  final String? createdAt;
+  final List<({String name, int qty, String unit})> items;
+
+  const LogisticsInboundStatement({
+    required this.id,
+    required this.statementNo,
+    required this.supplierName,
+    required this.itemCount,
+    required this.total,
+    required this.received,
+    required this.receivedAt,
+    required this.createdAt,
+    required this.items,
+  });
+
+  factory LogisticsInboundStatement.fromJson(Map<String, dynamic> j) =>
+      LogisticsInboundStatement(
+        id: j['id'] as int,
+        statementNo: j['statement_no'] as String? ?? '',
+        supplierName: j['supplier_name'] as String?,
+        itemCount: (j['item_count'] as num?)?.toInt() ?? 0,
+        total: (j['total'] as num?)?.toInt() ?? 0,
+        received: j['received'] as bool? ?? false,
+        receivedAt: j['received_at'] as String?,
+        createdAt: j['created_at'] as String?,
+        items: ((j['items'] as List?) ?? [])
+            .map((e) => (
+                  name: (e['name'] ?? '').toString(),
+                  qty: (e['qty'] as num?)?.toInt() ?? 0,
+                  unit: (e['unit'] ?? '').toString(),
+                ))
+            .toList(),
+      );
+}
+
+/// 수동 입고용 공급 품목.
+class SupplyProductLite {
+  final int id;
+  final String name;
+  final String unit;
+  const SupplyProductLite({required this.id, required this.name, required this.unit});
+  factory SupplyProductLite.fromJson(Map<String, dynamic> j) => SupplyProductLite(
+        id: j['id'] as int,
+        name: j['name'] as String? ?? '',
+        unit: j['unit'] as String? ?? '',
+      );
+}

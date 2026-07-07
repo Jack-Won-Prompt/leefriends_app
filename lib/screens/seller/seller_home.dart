@@ -7,6 +7,8 @@ import '../../theme/app_colors.dart';
 import '../../widgets/dashboard_header.dart';
 import 'bank_deposit_screen.dart';
 import 'categories_screen.dart';
+import 'fruit_storage_screen.dart';
+import 'logistics_inbound_screen.dart';
 import 'shipment_waiting_screen.dart';
 import 'hometax_screen.dart';
 import 'hq_inventory_screen.dart';
@@ -279,6 +281,14 @@ class _SellerHomeState extends State<SellerHome> {
             sub: '공급사별 발주 모아보기',
             onTap: () => _go(SupplierOrdersScreen(repository: widget.repository)),
           ),
+        if (_isHq)
+          _NavCard(
+            icon: Icons.local_shipping_outlined,
+            title: '본사 물류 입고',
+            sub: '공급처 명세서 입고 · 수동 입고',
+            onTap: () => _go(LogisticsInboundScreen(
+                repository: widget.repository, onChanged: widget.onChanged)),
+          ),
         if (widget.onAttendance != null)
           _NavCard(
             icon: Icons.how_to_reg_outlined,
@@ -415,6 +425,13 @@ class _SellerHomeState extends State<SellerHome> {
             title: '카테고리 관리',
             sub: '품목 대분류 관리',
             onTap: () => _go(CategoriesScreen(repository: widget.repository)),
+          ),
+        if (_isHq)
+          _NavCard(
+            icon: Icons.ac_unit_outlined,
+            title: '과일 보관 관리',
+            sub: '보관 조건 등록 · 매장 공유',
+            onTap: () => _go(FruitStorageScreen.manage(repository: widget.repository)),
           ),
       ]);
 
