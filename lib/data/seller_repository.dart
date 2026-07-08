@@ -10,6 +10,7 @@ import '../models/hq_inventory.dart';
 import '../models/paged.dart';
 import '../models/store_payment.dart';
 import '../models/store_ops.dart' show FruitStorageItem;
+import '../models/purchase_order.dart';
 import 'api_config.dart';
 import 'auth_controller.dart';
 import 'order_repository.dart' show OrderException;
@@ -270,6 +271,13 @@ class SellerRepository {
     return body['message'] as String? ?? '품목을 수정했습니다.';
   }
 
+  // 매장 발주건에 품목 추가 (본사)
+  Future<String> addOrderItem(int orderId, int productId, int qty) async {
+    final body = await _post('/seller/orders/$orderId/items',
+        {'product_id': productId, 'qty': qty}, expect: 201);
+    return body['message'] as String? ?? '품목을 추가했습니다.';
+  }
+
   // 택배비(박스·단가) 등록/수정 (본사)
   Future<String> updateOrderShipping(int orderId, int boxCount, int unitPrice) async {
     final body = await _patch('/seller/orders/$orderId/shipping',
@@ -471,6 +479,67 @@ class SellerRepository {
     });
     return SellerShipment.fromJson(body['data'] as Map<String, dynamic>);
   }
+
+  // ============ 구매발주 (본사 → 공급사) ============
+  Future<({List<PurchaseOrder> rows, String role, List<StatusOption> statuses, bool hasMore})>
+      purchaseOrders({String status = 'all', int page = 1}) async {
+    final body = await _get('/seller/purchase-orders?status=$status&page=$page');
+    final meta = body['meta'] as Map<String, dynamic>?;
+    return (
+      rows: (body['data'] as List)
+          .map((e) => PurchaseOrder.fromJson(e as Map<String, dynamic>))
+          .toList(),
+      role: meta?['role'] as String? ?? 'hq',
+      statuses: ((meta?['statuses'] as List?) ?? [])
+          .map((e) => StatusOption.fromJson(e as Map<String, dynamic>))
+          .toList(),
+      hasMore: Paged.hasMoreFromMeta(meta),
+    );
+  }
+
+  Future<({List<PoSupplier> suppliers, List<PoProduct> products})>
+      purchaseOrderCreateData() async {
+    final body = await _get('/seller/purchase-orders/create-data');
+    final d = body['data'] as Map<String, dynamic>;
+    return (
+      suppliers: (d['suppliers'] as List)
+          .map((e) => PoSupplier.fromJson(e as Map<String, dynamic>))
+          .toList(),
+      products: (d['products'] as List)
+          .map((e) => PoProduct.fromJson(e as Map<String, dynamic>))
+          .toList(),
+    );
+  }
+
+  Future<PurchaseOrder> createPurchaseOrder({
+    required int supplierId,
+    required List<({int productId, int qty})> items,
+    String? note,
+  }) async {
+    final body = await _post('/seller/purchase-orders', {
+      'supplier_id': supplierId,
+      'items': [for (final it in items) {'product_id': it.productId, 'qty': it.qty}],
+      'note': ?note,
+    }, expect: 201);
+    return PurchaseOrder.fromJson(body['data'] as Map<String, dynamic>);
+  }
+
+  Future<PurchaseOrder> purchaseOrderDetail(int id) async {
+    final body = await _get('/seller/purchase-orders/$id');
+    return PurchaseOrder.fromJson(body['data'] as Map<String, dynamic>);
+  }
+
+  Future<String> receivePurchaseOrder(int id) async =>
+      (await _post('/seller/purchase-orders/$id/receive', const {}))['message'] as String? ??
+      '입고 처리되었습니다.';
+
+  Future<String> cancelPurchaseOrder(int id) async =>
+      (await _post('/seller/purchase-orders/$id/cancel', const {}))['message'] as String? ??
+      '취소되었습니다.';
+
+  Future<String> confirmPurchaseOrder(int id) async =>
+      (await _post('/seller/purchase-orders/$id/confirm', const {}))['message'] as String? ??
+      '확인했습니다.';
 
   // ============ 본사 물류 입고 ============
   Future<

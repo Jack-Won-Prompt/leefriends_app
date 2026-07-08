@@ -137,6 +137,59 @@ class _SellerOrderDetailScreenState extends State<SellerOrderDetailScreen> {
     _future = widget.repository.orderDetail(widget.id);
   }
 
+  /// 본사 — 매장 발주건에 품목 추가. 승인된 상품에서 선택 + 수량.
+  Future<void> _addItem(SellerOrder o) async {
+    setState(() => _busy = true);
+    List<ManagedProduct> products;
+    try {
+      final r = await widget.repository.products(approval: 'approved');
+      products = r.products.where((p) => p.isActive).toList();
+    } catch (e) {
+      if (mounted) {
+        setState(() => _busy = false);
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text(e.toString().replaceFirst('OrderException: ', '')),
+            behavior: SnackBarBehavior.floating,
+            backgroundColor: const Color(0xFFB02A2A)));
+      }
+      return;
+    }
+    if (mounted) setState(() => _busy = false);
+    if (!mounted) return;
+    if (products.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text('추가 가능한 승인 상품이 없습니다.'),
+          behavior: SnackBarBehavior.floating));
+      return;
+    }
+    final res = await showDialog<({int productId, int qty})>(
+      context: context,
+      builder: (_) => _AddItemDialog(products: products),
+    );
+    if (res == null) return;
+    setState(() => _busy = true);
+    try {
+      final msg = await widget.repository.addOrderItem(o.id, res.productId, res.qty);
+      widget.onChanged?.call();
+      setState(() { _future = widget.repository.orderDetail(widget.id); });
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text(msg),
+            behavior: SnackBarBehavior.floating,
+            backgroundColor: AppColors.mango800));
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text(e.toString().replaceFirst('OrderException: ', '')),
+            behavior: SnackBarBehavior.floating,
+            backgroundColor: const Color(0xFFB02A2A)));
+      }
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
   Future<void> _confirmOrder(SellerOrder o) async {
     if (o.salesOrderId == null) return;
     final ok = await showDialog<bool>(
@@ -270,9 +323,18 @@ class _SellerOrderDetailScreenState extends State<SellerOrderDetailScreen> {
                 ),
               ),
               const SizedBox(height: 16),
-              const Padding(
-                padding: EdgeInsets.fromLTRB(4, 0, 4, 8),
-                child: Text('품목', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w800)),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(4, 0, 4, 8),
+                child: Row(children: [
+                  const Text('품목', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w800)),
+                  const Spacer(),
+                  if (widget.isHq && (o.status == 'pending' || o.status == 'processing'))
+                    TextButton.icon(
+                      onPressed: _busy ? null : () => _addItem(o),
+                      icon: const Icon(Icons.add, size: 18),
+                      label: const Text('품목 추가'),
+                    ),
+                ]),
               ),
               for (final it in o.items) _itemTile(o, it),
               // 취소된 주문은 택배비·세금계산서·거래명세서 액션 숨김
@@ -859,6 +921,111 @@ class _PriceDialogState extends State<_PriceDialog> {
             Navigator.pop(context, v);
           },
           child: const Text('확정'),
+        ),
+      ],
+    );
+  }
+}
+
+/// 발주 품목 추가 다이얼로그 — 승인 상품 검색·선택 + 수량. (productId, qty) 반환.
+class _AddItemDialog extends StatefulWidget {
+  const _AddItemDialog({required this.products});
+  final List<ManagedProduct> products;
+
+  @override
+  State<_AddItemDialog> createState() => _AddItemDialogState();
+}
+
+class _AddItemDialogState extends State<_AddItemDialog> {
+  String _query = '';
+  ManagedProduct? _selected;
+  final _qty = TextEditingController(text: '1');
+
+  @override
+  void dispose() {
+    _qty.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final filtered = _query.isEmpty
+        ? widget.products
+        : widget.products
+            .where((p) =>
+                p.name.toLowerCase().contains(_query.toLowerCase()) ||
+                p.code.toLowerCase().contains(_query.toLowerCase()))
+            .toList();
+    return AlertDialog(
+      title: const Text('품목 추가'),
+      content: SizedBox(
+        width: double.maxFinite,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              decoration: const InputDecoration(
+                  hintText: '품목명·코드 검색',
+                  prefixIcon: Icon(Icons.search),
+                  isDense: true,
+                  border: OutlineInputBorder()),
+              onChanged: (v) => setState(() {
+                _query = v;
+                _selected = null;
+              }),
+            ),
+            const SizedBox(height: 10),
+            SizedBox(
+              height: 240,
+              child: filtered.isEmpty
+                  ? const Center(
+                      child: Text('검색 결과 없음', style: TextStyle(color: AppColors.inkSoft)))
+                  : ListView.builder(
+                      itemCount: filtered.length,
+                      itemBuilder: (context, i) {
+                        final p = filtered[i];
+                        final sel = _selected?.id == p.id;
+                        return ListTile(
+                          dense: true,
+                          selected: sel,
+                          selectedTileColor: AppColors.mango100,
+                          title: Text(p.name,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
+                          subtitle: Text(
+                              '${p.supplyType == 'hq' ? '본사' : (p.supplierName ?? '공급사')} · ${won(p.storePrice)}/${p.unit}',
+                              style: const TextStyle(fontSize: 12)),
+                          trailing: sel ? const Icon(Icons.check_circle, color: AppColors.accent) : null,
+                          onTap: () => setState(() => _selected = p),
+                        );
+                      },
+                    ),
+            ),
+            const SizedBox(height: 10),
+            Row(children: [
+              const Text('수량', style: TextStyle(fontWeight: FontWeight.w700)),
+              const SizedBox(width: 12),
+              Expanded(
+                child: TextField(
+                  controller: _qty,
+                  keyboardType: TextInputType.number,
+                  decoration: const InputDecoration(isDense: true, border: OutlineInputBorder()),
+                ),
+              ),
+            ]),
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(onPressed: () => Navigator.pop(context), child: const Text('취소')),
+        FilledButton(
+          onPressed: () {
+            final q = int.tryParse(_qty.text.trim()) ?? 0;
+            if (_selected == null || q < 1) return;
+            Navigator.pop(context, (productId: _selected!.id, qty: q));
+          },
+          child: const Text('추가'),
         ),
       ],
     );

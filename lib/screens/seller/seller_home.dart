@@ -9,6 +9,7 @@ import 'bank_deposit_screen.dart';
 import 'categories_screen.dart';
 import 'fruit_storage_screen.dart';
 import 'logistics_inbound_screen.dart';
+import 'purchase_orders_screen.dart';
 import 'shipment_waiting_screen.dart';
 import 'hometax_screen.dart';
 import 'hq_inventory_screen.dart';
@@ -289,6 +290,13 @@ class _SellerHomeState extends State<SellerHome> {
             onTap: () => _go(LogisticsInboundScreen(
                 repository: widget.repository, onChanged: widget.onChanged)),
           ),
+        _NavCard(
+          icon: Icons.shopping_cart_outlined,
+          title: '구매발주',
+          sub: _isHq ? '공급사에 발주 · 입고' : '본사 구매발주 확인',
+          onTap: () => _go(PurchaseOrdersScreen(
+              repository: widget.repository, isHq: _isHq, onChanged: widget.onChanged)),
+        ),
         if (widget.onAttendance != null)
           _NavCard(
             icon: Icons.how_to_reg_outlined,
