@@ -960,7 +960,10 @@ class _AddItemDialogState extends State<_AddItemDialog> {
       title: const Text('품목 추가'),
       content: SizedBox(
         width: double.maxFinite,
-        child: Column(
+        child: ConstrainedBox(
+          constraints: BoxConstraints(
+              maxHeight: MediaQuery.of(context).size.height * 0.5),
+          child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             TextField(
@@ -975,8 +978,7 @@ class _AddItemDialogState extends State<_AddItemDialog> {
               }),
             ),
             const SizedBox(height: 10),
-            SizedBox(
-              height: 240,
+            Flexible(
               child: filtered.isEmpty
                   ? const Center(
                       child: Text('검색 결과 없음', style: TextStyle(color: AppColors.inkSoft)))
@@ -1015,6 +1017,7 @@ class _AddItemDialogState extends State<_AddItemDialog> {
               ),
             ]),
           ],
+        ),
         ),
       ),
       actions: [
