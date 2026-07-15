@@ -85,6 +85,22 @@ class OrderRepository {
     throw OrderException(_error(body, res.statusCode));
   }
 
+  /// 발주(거래명세서)에 품목 추가 (출고 전). 성공 메시지 반환.
+  Future<String> addOrderItem(int orderId, int productId, int qty) async {
+    final res = await _client
+        .post(
+          Uri.parse('${ApiConfig.apiUrl}/orders/$orderId/items'),
+          headers: {...auth.authHeaders, 'Content-Type': 'application/json'},
+          body: jsonEncode({'product_id': productId, 'qty': qty}),
+        )
+        .timeout(ApiConfig.timeout);
+    final body = _decodeMap(res);
+    if (res.statusCode == 201 || res.statusCode == 200) {
+      return body['message'] as String? ?? '품목을 추가했습니다.';
+    }
+    throw OrderException(_error(body, res.statusCode));
+  }
+
   /// 발주 취소 (출고 전).
   Future<OrderModel> cancelOrder(int id) async {
     final res = await _client

@@ -390,7 +390,14 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
   int? _supplierId;
   bool _active = true;
   bool _marketPrice = false;
+  String _taxType = 'inc'; // inc | exc | exempt
   bool _busy = false;
+
+  static const _taxLabels = {
+    'inc': '과세(포함)',
+    'exc': '과세(별도)',
+    'exempt': '면세',
+  };
 
   bool get _isHq => widget.role == 'hq';
   bool get _isEdit => widget.product != null;
@@ -409,6 +416,7 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
     _supplierId = p?.supplierId;
     _active = p?.isActive ?? true;
     _marketPrice = p?.isMarketPrice ?? false;
+    _taxType = p?.taxType ?? 'inc';
   }
 
   @override
@@ -441,6 +449,7 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
       data['supplier_id'] = _supplyType == 'supplier' ? _supplierId : null;
       data['is_active'] = _active;
       data['is_market_price'] = _marketPrice;
+      data['tax_type'] = _taxType;
     }
     try {
       final msg = await widget.repository.saveProduct(data, id: widget.product?.id);
@@ -476,7 +485,13 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
             DropdownButtonFormField<String>(
               initialValue: _category,
               decoration: _dec('카테고리'),
-              items: [for (final c in widget.categories) DropdownMenuItem(value: c, child: Text(c))],
+              style: const TextStyle(color: AppColors.ink, fontSize: 15),
+              dropdownColor: AppColors.surface,
+              iconEnabledColor: AppColors.inkSoft,
+              items: [
+                for (final c in widget.categories)
+                  DropdownMenuItem(value: c, child: Text(c, style: const TextStyle(color: AppColors.ink)))
+              ],
               onChanged: (v) => setState(() => _category = v),
             ),
             const SizedBox(height: 12),
@@ -486,6 +501,16 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
             const SizedBox(height: 12),
             if (_isHq) ...[
               _field(_storePrice, '매장 출고가', required: true, number: true),
+              const SizedBox(height: 12),
+              const Text('세금 구분',
+                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: AppColors.inkSoft)),
+              const SizedBox(height: 6),
+              Row(children: [
+                for (final e in _taxLabels.entries) ...[
+                  Expanded(child: _taxChip(e.key, e.value)),
+                  if (e.key != _taxLabels.keys.last) const SizedBox(width: 8),
+                ],
+              ]),
               const SizedBox(height: 12),
               Row(children: [
                 Expanded(child: _typeChip('hq', '본사 직공급')),
@@ -497,7 +522,13 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
                 DropdownButtonFormField<int>(
                   initialValue: _supplierId,
                   decoration: _dec('공급처'),
-                  items: [for (final s in widget.suppliers) DropdownMenuItem(value: s.id, child: Text(s.name))],
+                  style: const TextStyle(color: AppColors.ink, fontSize: 15),
+                  dropdownColor: AppColors.surface,
+                  iconEnabledColor: AppColors.inkSoft,
+                  items: [
+                    for (final s in widget.suppliers)
+                      DropdownMenuItem(value: s.id, child: Text(s.name, style: const TextStyle(color: AppColors.ink)))
+                  ],
                   onChanged: (v) => setState(() => _supplierId = v),
                 ),
                 const SizedBox(height: 12),
@@ -542,6 +573,25 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
               ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2.2, color: Colors.white))
               : Text(_isEdit ? '수정 저장' : '등록'),
         ),
+      ),
+    );
+  }
+
+  Widget _taxChip(String value, String label) {
+    final active = _taxType == value;
+    return GestureDetector(
+      onTap: () => setState(() => _taxType = value),
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 11),
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          color: active ? AppColors.accent : AppColors.surface,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: active ? AppColors.accent : AppColors.line),
+        ),
+        child: Text(label,
+            style: TextStyle(
+                fontSize: 12.5, fontWeight: FontWeight.w700, color: active ? Colors.white : AppColors.inkSoft)),
       ),
     );
   }

@@ -358,6 +358,7 @@ class ManagedProduct {
   final int supplyPrice;
   final int storePrice;
   final bool isMarketPrice;
+  final String taxType; // inc | exc | exempt
   final bool isActive;
   final String approvalStatus; // approved | pending | rejected
   final String? approvalNote;
@@ -376,6 +377,7 @@ class ManagedProduct {
     required this.supplyPrice,
     required this.storePrice,
     required this.isMarketPrice,
+    this.taxType = 'inc',
     required this.isActive,
     required this.approvalStatus,
     required this.approvalNote,
@@ -393,6 +395,7 @@ class ManagedProduct {
         supplierId: j['supplier_id'] as int?,
         supplierName: j['supplier_name'] as String?,
         isMarketPrice: j['is_market_price'] as bool? ?? false,
+        taxType: j['tax_type'] as String? ?? 'inc',
         supplyPrice: _i(j['supply_price']),
         storePrice: _i(j['store_price']),
         isActive: j['is_active'] as bool? ?? true,

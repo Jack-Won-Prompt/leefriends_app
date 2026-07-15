@@ -140,8 +140,10 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
               icon: const Icon(Icons.receipt_long_outlined),
               onPressed: () => Navigator.of(context).push(MaterialPageRoute(
                 builder: (_) => OrderStatementScreen(
-                    repository: widget.repository, orderId: widget.orderId),
-              )),
+                    repository: widget.repository,
+                    orderId: widget.orderId,
+                    editable: order.maybeEditable),
+              )).then((_) => _fetch()),
             ),
         ],
       ),
