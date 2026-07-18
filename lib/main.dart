@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import 'data/app_http.dart';
+import 'data/app_version.dart';
 import 'data/auth_controller.dart';
 import 'data/menu_repository.dart';
 import 'data/push_service.dart';
@@ -13,6 +14,7 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   // 운영 서버 TLS 중간 인증서 보완 (Android Flutter 핸드셰이크 우회)
   await AppHttp.init();
+  await AppVersion.init();
   SystemChrome.setSystemUIOverlayStyle(
     const SystemUiOverlayStyle(
       statusBarColor: Colors.transparent,

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../data/api_config.dart';
+import '../../data/app_version.dart';
 import '../../data/auth_controller.dart';
 import '../../theme/app_colors.dart';
 
@@ -209,7 +210,8 @@ class _LoginScreenState extends State<LoginScreen> {
                 const SizedBox(height: 12),
                 Center(
                   child: Text(
-                    '서버: ${Uri.parse(ApiConfig.baseUrl).host}',
+                    '서버: ${Uri.parse(ApiConfig.baseUrl).host}'
+                    '${AppVersion.display.isNotEmpty ? '  ·  ${AppVersion.display}' : ''}',
                     style: const TextStyle(fontSize: 11, color: AppColors.inkSoft),
                   ),
                 ),

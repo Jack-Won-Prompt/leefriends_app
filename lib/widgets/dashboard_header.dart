@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../data/app_version.dart';
 import '../theme/app_colors.dart';
 
 /// 로그인 후 대시보드 상단 헤더 — 인사말 + 이름 + 액션(메시지/알림/로그아웃).
@@ -63,6 +64,14 @@ class DashboardHeader extends StatelessWidget {
                           color: Colors.white.withValues(alpha: 0.85),
                           fontSize: 12,
                           fontWeight: FontWeight.w500)),
+                  if (AppVersion.display.isNotEmpty) ...[
+                    const SizedBox(height: 2),
+                    Text(AppVersion.display,
+                        style: TextStyle(
+                            color: Colors.white.withValues(alpha: 0.65),
+                            fontSize: 11,
+                            fontWeight: FontWeight.w500)),
+                  ],
                 ],
               ),
             ),
