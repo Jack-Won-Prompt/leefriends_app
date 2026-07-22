@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../data/api_config.dart';
 import '../../data/app_version.dart';
 import '../../data/auth_controller.dart';
+import '../../data/net_error.dart';
 import '../../theme/app_colors.dart';
 
 /// 매장 발주 로그인 화면. 발주 탭에서 비로그인 상태일 때 표시됩니다.
@@ -40,8 +41,8 @@ class _LoginScreenState extends State<LoginScreen> {
     try {
       await widget.auth.login(_email.text.trim(), _password.text);
     } catch (e) {
-      setState(() => _error =
-          e is AuthException ? e.message : '연결에 실패했습니다. 네트워크를 확인해 주세요.');
+      setState(() =>
+          _error = e is AuthException ? e.message : describeNetworkError(e));
     } finally {
       if (mounted) setState(() => _loading = false);
     }
@@ -91,7 +92,7 @@ class _LoginScreenState extends State<LoginScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-            content: Text(e is AuthException ? e.message : '요청에 실패했습니다.'),
+            content: Text(e is AuthException ? e.message : describeNetworkError(e)),
             behavior: SnackBarBehavior.floating,
             backgroundColor: const Color(0xFFB02A2A)));
       }
