@@ -81,6 +81,36 @@ class _OrderStatementScreenState extends State<OrderStatementScreen> {
     }
   }
 
+  /// 거래명세서에서 품목 삭제.
+  Future<void> _deleteItem(StatementLine it) async {
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: AppColors.surface,
+        title: const Text('품목 삭제'),
+        content: Text('«${it.name}» 품목을 발주에서 삭제할까요?\n본사·공급처에 변경 알림이 전송됩니다.'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('취소')),
+          FilledButton(
+              style: FilledButton.styleFrom(backgroundColor: const Color(0xFFB02A2A)),
+              onPressed: () => Navigator.pop(ctx, true),
+              child: const Text('삭제')),
+        ],
+      ),
+    );
+    if (ok != true) return;
+    setState(() => _busy = true);
+    try {
+      await widget.repository.deleteOrderItem(widget.orderId, it.id!);
+      _snack('«${it.name}» 품목을 삭제했습니다.');
+      _reload();
+    } catch (e) {
+      _snack(e.toString(), error: true);
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -111,6 +141,9 @@ class _OrderStatementScreenState extends State<OrderStatementScreen> {
                     style: const TextStyle(color: AppColors.inkSoft)));
           }
           final s = snap.data!;
+          final totalItems = s.groups.fold<int>(0, (n, g) => n + g.items.length);
+          // 삭제 가능: 편집 가능 + 품목 id 존재 + 마지막 1품목 아님
+          bool canDelete(StatementLine it) => widget.editable && it.id != null && totalItems > 1;
           return ListView(
             padding: EdgeInsets.fromLTRB(
                 16, 16, 16, (widget.editable ? 96 : 32) + MediaQuery.of(context).padding.bottom),
@@ -176,6 +209,14 @@ class _OrderStatementScreenState extends State<OrderStatementScreen> {
                       Text(won(it.amount),
                           style: const TextStyle(
                               fontSize: 14, fontWeight: FontWeight.w800, color: AppColors.accent)),
+                      if (canDelete(it))
+                        IconButton(
+                          onPressed: _busy ? null : () => _deleteItem(it),
+                          visualDensity: VisualDensity.compact,
+                          padding: const EdgeInsets.only(left: 4),
+                          constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                          icon: const Icon(Icons.delete_outline, size: 18, color: Color(0xFFB02A2A)),
+                        ),
                     ]),
                   ),
                 const SizedBox(height: 8),

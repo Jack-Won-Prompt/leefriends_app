@@ -585,6 +585,14 @@ class _SellerOrderDetailScreenState extends State<SellerOrderDetailScreen> {
             if (widget.isHq) ...[
               const SizedBox(width: 8),
               const Icon(Icons.edit_outlined, size: 16, color: AppColors.inkSoft),
+              if (_canDeleteItem(o))
+                IconButton(
+                  onPressed: _busy ? null : () => _deleteItem(o, it),
+                  visualDensity: VisualDensity.compact,
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                  icon: const Icon(Icons.delete_outline, size: 18, color: Color(0xFFB02A2A)),
+                ),
             ],
           ]),
           // 싯가 품목 — 본사 단가 확정
@@ -646,6 +654,30 @@ class _SellerOrderDetailScreenState extends State<SellerOrderDetailScreen> {
       onTap: _busy ? null : () => _editItem(o, it),
       child: tile,
     );
+  }
+
+  /// 삭제 가능 여부(본사, 출고 전, 마지막 1품목 아님).
+  bool _canDeleteItem(SellerOrder o) =>
+      widget.isHq && (o.status == 'pending' || o.status == 'processing') && o.items.length > 1;
+
+  /// 본사 — 발주에서 품목 삭제.
+  Future<void> _deleteItem(SellerOrder o, FulfillItem it) async {
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('품목 삭제'),
+        content: Text('«${it.productName}» 품목을 발주에서 삭제할까요?\n매장에 변경 알림이 전송됩니다.'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('취소')),
+          FilledButton(
+              style: FilledButton.styleFrom(backgroundColor: const Color(0xFFB02A2A)),
+              onPressed: () => Navigator.pop(ctx, true),
+              child: const Text('삭제')),
+        ],
+      ),
+    );
+    if (ok != true) return;
+    await _runAction(() => widget.repository.deleteOrderItem(o.id, it.id));
   }
 
   /// 본사 — 품목 공급가/출고가/수량 수정 팝업.

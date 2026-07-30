@@ -598,6 +598,16 @@ class _CreateStatementScreenState extends State<CreateStatementScreen> {
           ),
         ),
         _stepper(p, q),
+        // 담은 품목 — 한 번에 삭제
+        if (q > 0)
+          IconButton(
+            onPressed: () => setState(() => _qty.remove(p.id)),
+            tooltip: '삭제',
+            visualDensity: VisualDensity.compact,
+            padding: const EdgeInsets.only(left: 2),
+            constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+            icon: const Icon(Icons.delete_outline, size: 18, color: Color(0xFFB02A2A)),
+          ),
       ]),
     );
   }

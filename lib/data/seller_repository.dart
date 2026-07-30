@@ -278,6 +278,12 @@ class SellerRepository {
     return body['message'] as String? ?? '품목을 추가했습니다.';
   }
 
+  // 매장 발주건에서 품목 삭제 (본사)
+  Future<String> deleteOrderItem(int orderId, int itemId) async {
+    final body = await _delete('/seller/orders/$orderId/items/$itemId');
+    return body['message'] as String? ?? '품목을 삭제했습니다.';
+  }
+
   // 택배비(박스·단가) 등록/수정 (본사)
   Future<String> updateOrderShipping(int orderId, int boxCount, int unitPrice) async {
     final body = await _patch('/seller/orders/$orderId/shipping',

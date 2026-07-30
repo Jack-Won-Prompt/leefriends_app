@@ -133,14 +133,16 @@ class StatementGroup {
 }
 
 class StatementLine {
+  final int? id; // OrderItem id (샘플/구버전 응답엔 없을 수 있음)
   final String name;
   final String unit;
   final int qty;
   final int unitPrice;
   final int amount;
   const StatementLine(
-      {required this.name, required this.unit, required this.qty, required this.unitPrice, required this.amount});
+      {this.id, required this.name, required this.unit, required this.qty, required this.unitPrice, required this.amount});
   factory StatementLine.fromJson(Map<String, dynamic> j) => StatementLine(
+        id: (j['id'] as num?)?.toInt(),
         name: j['name'] as String? ?? '',
         unit: j['unit'] as String? ?? '',
         qty: (j['qty'] as num?)?.toInt() ?? 0,

@@ -101,6 +101,19 @@ class OrderRepository {
     throw OrderException(_error(body, res.statusCode));
   }
 
+  /// 발주(거래명세서)에서 품목 삭제 (출고 전). 갱신된 발주 반환.
+  Future<OrderModel> deleteOrderItem(int orderId, int itemId) async {
+    final res = await _client
+        .delete(Uri.parse('${ApiConfig.apiUrl}/orders/$orderId/items/$itemId'),
+            headers: auth.authHeaders)
+        .timeout(ApiConfig.timeout);
+    final body = _decodeMap(res);
+    if (res.statusCode == 200) {
+      return OrderModel.fromJson(body['data'] as Map<String, dynamic>);
+    }
+    throw OrderException(_error(body, res.statusCode));
+  }
+
   /// 발주 취소 (출고 전).
   Future<OrderModel> cancelOrder(int id) async {
     final res = await _client
