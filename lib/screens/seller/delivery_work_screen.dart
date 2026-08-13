@@ -9,9 +9,9 @@ import '../../models/fulfillment.dart';
 import '../../theme/app_colors.dart';
 import 'barcode_scan_screen.dart';
 
-/// 배송업무 — 출고지시서 QR 스캔 → 현장 사진 → 매장 담당자 서명 → 배송완료.
-/// 배송완료 시 서버가 출고/발주 상태를 배송완료로 바꾸고,
-/// 관련 발주의 거래명세서 이메일 + 세금계산서를 자동 발행한다. (본사 전용)
+/// 배송업무 — 출고지시서 QR(발주번호) 스캔 → 현장 사진 → 매장 담당자 서명 → 배송완료.
+/// 배송완료 시 서버가 발주 상태를 배송완료(completed)로 바꾸고,
+/// 해당 발주의 거래명세서 이메일 + 세금계산서를 자동 발행한다. (본사 전용)
 class DeliveryWorkScreen extends StatefulWidget {
   const DeliveryWorkScreen({super.key, required this.repository, this.embedded = false});
   final SellerRepository repository;
@@ -22,7 +22,7 @@ class DeliveryWorkScreen extends StatefulWidget {
 }
 
 class _DeliveryWorkScreenState extends State<DeliveryWorkScreen> {
-  SellerShipment? _shipment;
+  SellerOrder? _order;
   final List<XFile> _photos = [];
   late final SignatureController _sig;
   bool _busy = false;
@@ -60,14 +60,16 @@ class _DeliveryWorkScreenState extends State<DeliveryWorkScreen> {
     if (code == null || code.isEmpty) return;
     setState(() => _busy = true);
     try {
-      final s = await widget.repository.lookupShipment(code);
+      final o = await widget.repository.lookupDeliveryOrder(code.trim());
       setState(() {
-        _shipment = s;
+        _order = o;
         _photos.clear();
         _sig.clear();
       });
-      if (s.status != 'confirmed') {
-        _snack('이 출고는 “${s.statusLabel}” 상태입니다. 배송중(출고확정) 상태만 배송완료할 수 있습니다.', error: true);
+      if (o.status == 'completed') {
+        _snack('발주 ${o.orderNo} 는 이미 배송완료된 발주입니다.', error: true);
+      } else if (o.status == 'canceled') {
+        _snack('발주 ${o.orderNo} 는 취소된 발주입니다.', error: true);
       }
     } catch (e) {
       _snack(e.toString(), error: true);
@@ -104,14 +106,15 @@ class _DeliveryWorkScreenState extends State<DeliveryWorkScreen> {
   }
 
   bool get _canComplete =>
-      _shipment != null &&
-      _shipment!.status == 'confirmed' &&
+      _order != null &&
+      _order!.status != 'completed' &&
+      _order!.status != 'canceled' &&
       _photos.isNotEmpty &&
       _sig.isNotEmpty &&
       !_busy;
 
   Future<void> _complete() async {
-    final s = _shipment;
+    final s = _order;
     if (s == null) return;
     if (_photos.isEmpty) {
       _snack('현장 사진을 1장 이상 촬영해 주세요.', error: true);
@@ -126,8 +129,9 @@ class _DeliveryWorkScreenState extends State<DeliveryWorkScreen> {
       builder: (ctx) => AlertDialog(
         title: const Text('배송 완료'),
         content: Text(
-            '출고 «${s.shipmentNo}» 를 배송완료로 처리합니다.\n'
-            '매장(${s.storeName ?? ''})에 거래명세서가 전송되고 세금계산서가 자동 발행됩니다.\n진행할까요?'),
+            '발주 «${s.orderNo}» 를 배송완료로 처리합니다.\n'
+            '매장(${s.storeName ?? ''})에 거래명세서가 전송되고 세금계산서가 자동 발행됩니다.'
+            '${s.hasPendingPrice ? '\n\n⚠️ 싯가 미확정 품목이 있어 세금계산서는 보류됩니다.' : ''}\n진행할까요?'),
         actions: [
           TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('취소')),
           FilledButton(
@@ -148,15 +152,15 @@ class _DeliveryWorkScreenState extends State<DeliveryWorkScreen> {
           '${Directory.systemTemp.path}/sig_${DateTime.now().millisecondsSinceEpoch}.png');
       await sigFile.writeAsBytes(bytes);
 
-      final msg = await widget.repository.completeDelivery(
-        shipmentId: s.id,
+      final msg = await widget.repository.completeOrderDelivery(
+        orderId: s.id,
         photoPaths: _photos.map((x) => x.path).toList(),
         signaturePath: sigFile.path,
       );
       if (!mounted) return;
       // 완료 → 초기화
       setState(() {
-        _shipment = null;
+        _order = null;
         _photos.clear();
         _sig.clear();
       });
@@ -189,7 +193,8 @@ class _DeliveryWorkScreenState extends State<DeliveryWorkScreen> {
   }
 
   Widget _body() {
-    final s = _shipment;
+    final s = _order;
+    final done = s != null && (s.status == 'completed' || s.status == 'canceled');
     return ListView(
       padding: EdgeInsets.fromLTRB(16, 16, 16, 32 + MediaQuery.of(context).padding.bottom),
       children: [
@@ -198,51 +203,54 @@ class _DeliveryWorkScreenState extends State<DeliveryWorkScreen> {
           onPressed: _busy ? null : _scan,
           style: FilledButton.styleFrom(minimumSize: const Size.fromHeight(56)),
           icon: const Icon(Icons.qr_code_scanner),
-          label: Text(s == null ? '출고지시서 QR 스캔' : '다른 출고 스캔'),
+          label: Text(s == null ? '출고지시서 QR 스캔' : '다른 발주 스캔'),
         ),
         const SizedBox(height: 16),
         if (s == null)
           const Padding(
             padding: EdgeInsets.only(top: 40),
             child: Center(
-              child: Text('출고지시서의 QR(바코드)을 스캔하면\n배송 처리를 시작합니다.',
+              child: Text('출고지시서의 QR을 스캔하면\n배송 처리를 시작합니다.',
                   textAlign: TextAlign.center,
                   style: TextStyle(color: AppColors.inkSoft, height: 1.5)),
             ),
           )
         else ...[
-          _shipmentCard(s),
-          const SizedBox(height: 20),
-          _photosSection(),
-          const SizedBox(height: 20),
-          _signatureSection(),
-          const SizedBox(height: 24),
-          FilledButton.icon(
-            onPressed: _canComplete ? _complete : null,
-            style: FilledButton.styleFrom(
-              minimumSize: const Size.fromHeight(56),
-              backgroundColor: const Color(0xFF1E8E4E),
+          _orderCard(s),
+          if (!done) ...[
+            const SizedBox(height: 20),
+            _photosSection(),
+            const SizedBox(height: 20),
+            _signatureSection(),
+            const SizedBox(height: 24),
+            FilledButton.icon(
+              onPressed: _canComplete ? _complete : null,
+              style: FilledButton.styleFrom(
+                minimumSize: const Size.fromHeight(56),
+                backgroundColor: const Color(0xFF1E8E4E),
+              ),
+              icon: _busy
+                  ? const SizedBox(
+                      width: 20, height: 20,
+                      child: CircularProgressIndicator(strokeWidth: 2.2, color: Colors.white))
+                  : const Icon(Icons.check_circle_outline),
+              label: const Text('배송 완료', style: TextStyle(fontWeight: FontWeight.w800)),
             ),
-            icon: _busy
-                ? const SizedBox(
-                    width: 20, height: 20,
-                    child: CircularProgressIndicator(strokeWidth: 2.2, color: Colors.white))
-                : const Icon(Icons.check_circle_outline),
-            label: const Text('배송 완료', style: TextStyle(fontWeight: FontWeight.w800)),
-          ),
-          if (s.status == 'confirmed' && !_canComplete && !_busy)
-            const Padding(
-              padding: EdgeInsets.only(top: 8),
-              child: Text('사진 1장 이상 + 서명을 완료하면 배송완료가 활성화됩니다.',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(fontSize: 12, color: AppColors.inkSoft)),
-            ),
+            if (!_canComplete && !_busy)
+              const Padding(
+                padding: EdgeInsets.only(top: 8),
+                child: Text('사진 1장 이상 + 서명을 완료하면 배송완료가 활성화됩니다.',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(fontSize: 12, color: AppColors.inkSoft)),
+              ),
+          ],
         ],
       ],
     );
   }
 
-  Widget _shipmentCard(SellerShipment s) {
+  Widget _orderCard(SellerOrder s) {
+    final completed = s.status == 'completed';
     return Container(
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
@@ -255,27 +263,29 @@ class _DeliveryWorkScreenState extends State<DeliveryWorkScreen> {
         children: [
           Row(children: [
             Expanded(
-              child: Text(s.shipmentNo,
+              child: Text(s.orderNo,
                   style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w800)),
             ),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
               decoration: BoxDecoration(
-                  color: s.status == 'confirmed' ? AppColors.mango100 : AppColors.cream,
+                  color: completed ? const Color(0xFFE7F6EC) : AppColors.mango100,
                   borderRadius: BorderRadius.circular(100)),
               child: Text(s.statusLabel,
-                  style: const TextStyle(
-                      fontSize: 12, fontWeight: FontWeight.w800, color: AppColors.mango800)),
+                  style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w800,
+                      color: completed ? const Color(0xFF1E8E4E) : AppColors.mango800)),
             ),
           ]),
           const SizedBox(height: 8),
-          Text('${s.storeName ?? ''} · ${s.itemCount}품목 · ${s.totalQty}개',
+          Text('${s.storeName ?? ''} · ${s.itemCount}품목',
               style: const TextStyle(fontSize: 13, color: AppColors.inkSoft)),
-          if (s.carrier != null && s.carrier!.isNotEmpty)
-            Padding(
-              padding: const EdgeInsets.only(top: 4),
-              child: Text('${s.carrier}${s.trackingNo != null && s.trackingNo!.isNotEmpty ? ' · ${s.trackingNo}' : ''}',
-                  style: const TextStyle(fontSize: 12, color: AppColors.inkSoft)),
+          if (s.hasPendingPrice)
+            const Padding(
+              padding: EdgeInsets.only(top: 6),
+              child: Text('⚠️ 싯가 미확정 품목 포함 — 세금계산서는 보류됩니다.',
+                  style: TextStyle(fontSize: 12, color: Color(0xFFC2660C), fontWeight: FontWeight.w700)),
             ),
         ],
       ),

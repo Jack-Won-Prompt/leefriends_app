@@ -486,20 +486,20 @@ class SellerRepository {
     return SellerShipment.fromJson(body['data'] as Map<String, dynamic>);
   }
 
-  /// 출고지시번호(QR) 로 출고 조회 (배송업무 스캔).
-  Future<SellerShipment> lookupShipment(String shipmentNo) async {
-    final body = await _get('/seller/shipments/lookup?no=${Uri.encodeQueryComponent(shipmentNo)}');
-    return SellerShipment.fromJson(body['data'] as Map<String, dynamic>);
+  /// 출고지시서 QR(발주번호) 로 발주 조회 (배송업무 스캔).
+  Future<SellerOrder> lookupDeliveryOrder(String orderNo) async {
+    final body = await _get('/seller/orders/delivery-lookup?no=${Uri.encodeQueryComponent(orderNo)}');
+    return SellerOrder.fromJson(body['data'] as Map<String, dynamic>);
   }
 
-  /// 현장 사진·서명과 함께 배송완료 (본사). 멀티파트 업로드. 성공 메시지 반환.
-  Future<String> completeDelivery({
-    required int shipmentId,
+  /// 현장 사진·서명과 함께 발주 배송완료 (본사). 멀티파트 업로드. 성공 메시지 반환.
+  Future<String> completeOrderDelivery({
+    required int orderId,
     required List<String> photoPaths,
     required String signaturePath,
   }) async {
     final req = http.MultipartRequest(
-        'POST', Uri.parse('${ApiConfig.apiUrl}/seller/shipments/$shipmentId/complete-delivery'));
+        'POST', Uri.parse('${ApiConfig.apiUrl}/seller/orders/$orderId/complete-delivery'));
     req.headers.addAll(auth.authHeaders); // Accept + Authorization
     for (final p in photoPaths) {
       req.files.add(await http.MultipartFile.fromPath('photos[]', p));
