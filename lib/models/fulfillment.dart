@@ -405,6 +405,40 @@ class ManagedProduct {
       );
 }
 
+/// 배송완료 목록 행 (배송업무 화면).
+class DeliveredOrder {
+  final int id;
+  final String orderNo;
+  final String? storeName;
+  final String? deliveredAt; // HH:mm
+  final int itemCount;
+  final int orderTotal;
+  final bool hasPhoto;
+  final bool hasSign;
+
+  const DeliveredOrder({
+    required this.id,
+    required this.orderNo,
+    required this.storeName,
+    required this.deliveredAt,
+    required this.itemCount,
+    required this.orderTotal,
+    required this.hasPhoto,
+    required this.hasSign,
+  });
+
+  factory DeliveredOrder.fromJson(Map<String, dynamic> j) => DeliveredOrder(
+        id: j['id'] as int,
+        orderNo: j['order_no'] as String? ?? '',
+        storeName: j['store_name'] as String?,
+        deliveredAt: j['delivered_at'] as String?,
+        itemCount: _i(j['item_count']),
+        orderTotal: _i(j['order_total']),
+        hasPhoto: j['has_photo'] as bool? ?? false,
+        hasSign: j['has_sign'] as bool? ?? false,
+      );
+}
+
 class SupplierOption {
   final int id;
   final String name;

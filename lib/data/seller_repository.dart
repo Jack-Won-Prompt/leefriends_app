@@ -492,6 +492,17 @@ class SellerRepository {
     return SellerOrder.fromJson(body['data'] as Map<String, dynamic>);
   }
 
+  /// 해당 날짜(YYYY-MM-DD) 배송완료 발주 목록 (본사).
+  Future<({List<DeliveredOrder> rows, String date})> deliveredOrders(String date) async {
+    final body = await _get('/seller/orders/delivered?date=${Uri.encodeQueryComponent(date)}');
+    return (
+      rows: (body['data'] as List)
+          .map((e) => DeliveredOrder.fromJson(e as Map<String, dynamic>))
+          .toList(),
+      date: (body['meta']?['date'] as String?) ?? date,
+    );
+  }
+
   /// 현장 사진·서명과 함께 발주 배송완료 (본사). 멀티파트 업로드. 성공 메시지 반환.
   Future<String> completeOrderDelivery({
     required int orderId,

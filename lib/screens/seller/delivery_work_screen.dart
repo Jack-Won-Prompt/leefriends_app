@@ -6,6 +6,7 @@ import 'package:signature/signature.dart';
 
 import '../../data/seller_repository.dart';
 import '../../models/fulfillment.dart';
+import '../../models/store_ops.dart' show won;
 import '../../theme/app_colors.dart';
 import 'barcode_scan_screen.dart';
 
@@ -27,6 +28,11 @@ class _DeliveryWorkScreenState extends State<DeliveryWorkScreen> {
   late final SignatureController _sig;
   bool _busy = false;
 
+  // 배송완료 목록 (날짜별)
+  DateTime _date = DateTime.now();
+  List<DeliveredOrder> _delivered = const [];
+  bool _loadingList = false;
+
   @override
   void initState() {
     super.initState();
@@ -36,6 +42,37 @@ class _DeliveryWorkScreenState extends State<DeliveryWorkScreen> {
       exportBackgroundColor: Colors.white,
     );
     _sig.addListener(() => setState(() {})); // 서명 상태에 따라 완료 버튼 활성화 갱신
+    _loadDelivered();
+  }
+
+  String get _dateQuery =>
+      '${_date.year}-${_date.month.toString().padLeft(2, '0')}-${_date.day.toString().padLeft(2, '0')}';
+  String get _dateLabel =>
+      '${_date.year}.${_date.month.toString().padLeft(2, '0')}.${_date.day.toString().padLeft(2, '0')}';
+
+  Future<void> _loadDelivered() async {
+    setState(() => _loadingList = true);
+    try {
+      final r = await widget.repository.deliveredOrders(_dateQuery);
+      if (!mounted) return;
+      setState(() => _delivered = r.rows);
+    } catch (_) {
+      if (mounted) setState(() => _delivered = const []);
+    } finally {
+      if (mounted) setState(() => _loadingList = false);
+    }
+  }
+
+  Future<void> _pickDate() async {
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: _date,
+      firstDate: DateTime(2024, 1, 1),
+      lastDate: DateTime.now().add(const Duration(days: 1)),
+    );
+    if (picked == null) return;
+    setState(() => _date = picked);
+    _loadDelivered();
   }
 
   @override
@@ -158,12 +195,13 @@ class _DeliveryWorkScreenState extends State<DeliveryWorkScreen> {
         signaturePath: sigFile.path,
       );
       if (!mounted) return;
-      // 완료 → 초기화
+      // 완료 → 초기화 + 오늘 목록 갱신
       setState(() {
         _order = null;
         _photos.clear();
         _sig.clear();
       });
+      _loadDelivered();
       showDialog<void>(
         context: context,
         builder: (ctx) => AlertDialog(
@@ -206,16 +244,8 @@ class _DeliveryWorkScreenState extends State<DeliveryWorkScreen> {
           label: Text(s == null ? '출고지시서 QR 스캔' : '다른 발주 스캔'),
         ),
         const SizedBox(height: 16),
-        if (s == null)
-          const Padding(
-            padding: EdgeInsets.only(top: 40),
-            child: Center(
-              child: Text('출고지시서의 QR을 스캔하면\n배송 처리를 시작합니다.',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(color: AppColors.inkSoft, height: 1.5)),
-            ),
-          )
-        else ...[
+        // 스캔한 발주의 배송 처리 흐름
+        if (s != null) ...[
           _orderCard(s),
           if (!done) ...[
             const SizedBox(height: 20),
@@ -244,8 +274,106 @@ class _DeliveryWorkScreenState extends State<DeliveryWorkScreen> {
                     style: TextStyle(fontSize: 12, color: AppColors.inkSoft)),
               ),
           ],
+          const SizedBox(height: 20),
+          const Divider(height: 1, color: AppColors.line),
+          const SizedBox(height: 16),
         ],
+        // 날짜 선택 + 배송완료 목록
+        _deliveredSection(),
       ],
+    );
+  }
+
+  Widget _deliveredSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(children: [
+          Text('배송완료 목록${_delivered.isNotEmpty ? ' (${_delivered.length})' : ''}',
+              style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w800)),
+          const Spacer(),
+          OutlinedButton.icon(
+            onPressed: _loadingList ? null : _pickDate,
+            style: OutlinedButton.styleFrom(
+              foregroundColor: AppColors.mango700,
+              side: const BorderSide(color: AppColors.mango300),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            ),
+            icon: const Icon(Icons.event_outlined, size: 18),
+            label: Text(_dateLabel, style: const TextStyle(fontWeight: FontWeight.w700)),
+          ),
+        ]),
+        const SizedBox(height: 10),
+        if (_loadingList)
+          const Padding(
+            padding: EdgeInsets.symmetric(vertical: 24),
+            child: Center(child: CircularProgressIndicator(color: AppColors.accent)),
+          )
+        else if (_delivered.isEmpty)
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(vertical: 28),
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              color: AppColors.surface,
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: AppColors.line),
+            ),
+            child: const Text('이 날짜의 배송완료 발주가 없습니다',
+                style: TextStyle(fontSize: 13, color: AppColors.inkSoft)),
+          )
+        else
+          for (final d in _delivered) _deliveredTile(d),
+      ],
+    );
+  }
+
+  Widget _deliveredTile(DeliveredOrder d) {
+    Widget badge(String t, bool ok) => Container(
+          margin: const EdgeInsets.only(left: 4),
+          padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+          decoration: BoxDecoration(
+            color: ok ? const Color(0xFFE7F6EC) : AppColors.cream,
+            borderRadius: BorderRadius.circular(100),
+          ),
+          child: Text(t,
+              style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w800,
+                  color: ok ? const Color(0xFF1E8E4E) : AppColors.inkSoft)),
+        );
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: AppColors.line),
+      ),
+      child: Row(children: [
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(children: [
+                Flexible(
+                  child: Text(d.orderNo,
+                      style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w800)),
+                ),
+                badge('사진', d.hasPhoto),
+                badge('서명', d.hasSign),
+              ]),
+              const SizedBox(height: 3),
+              Text(
+                  '${d.storeName ?? ''} · ${d.itemCount}품목'
+                  '${d.deliveredAt != null ? ' · ${d.deliveredAt} 완료' : ''}',
+                  style: const TextStyle(fontSize: 12, color: AppColors.inkSoft)),
+            ],
+          ),
+        ),
+        Text(won(d.orderTotal),
+            style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w800, color: AppColors.accent)),
+      ]),
     );
   }
 
