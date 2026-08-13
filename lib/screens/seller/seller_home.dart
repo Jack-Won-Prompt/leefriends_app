@@ -7,6 +7,7 @@ import '../../theme/app_colors.dart';
 import '../../widgets/dashboard_header.dart';
 import 'bank_deposit_screen.dart';
 import 'categories_screen.dart';
+import 'delivery_work_screen.dart';
 import 'fruit_storage_screen.dart';
 import 'logistics_inbound_screen.dart';
 import 'purchase_orders_screen.dart';
@@ -111,6 +112,13 @@ class _SellerHomeState extends State<SellerHome> {
           page: _shipTab,
         ),
         // (탭 클릭 시 바로 출고 화면)
+        if (_isHq)
+          _TabDef(
+            icon: Icons.assignment_turned_in_outlined,
+            activeIcon: Icons.assignment_turned_in,
+            label: '배송',
+            page: _deliveryTab,
+          ),
         _TabDef(
           icon: Icons.payments_outlined,
           activeIcon: Icons.payments,
@@ -373,6 +381,9 @@ class _SellerHomeState extends State<SellerHome> {
         onChanged: widget.onChanged,
         embedded: true,
       );
+
+  // ── 배송업무(본사) — 출고지시서 QR 스캔 → 사진·서명 → 배송완료 ──
+  Widget _deliveryTab() => DeliveryWorkScreen(repository: widget.repository, embedded: true);
 
   // ── 정산·전자문서 ──
   Widget _settleTab() => _tabBody([

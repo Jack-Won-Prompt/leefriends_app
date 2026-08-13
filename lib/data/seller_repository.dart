@@ -486,6 +486,34 @@ class SellerRepository {
     return SellerShipment.fromJson(body['data'] as Map<String, dynamic>);
   }
 
+  /// 출고지시번호(QR) 로 출고 조회 (배송업무 스캔).
+  Future<SellerShipment> lookupShipment(String shipmentNo) async {
+    final body = await _get('/seller/shipments/lookup?no=${Uri.encodeQueryComponent(shipmentNo)}');
+    return SellerShipment.fromJson(body['data'] as Map<String, dynamic>);
+  }
+
+  /// 현장 사진·서명과 함께 배송완료 (본사). 멀티파트 업로드. 성공 메시지 반환.
+  Future<String> completeDelivery({
+    required int shipmentId,
+    required List<String> photoPaths,
+    required String signaturePath,
+  }) async {
+    final req = http.MultipartRequest(
+        'POST', Uri.parse('${ApiConfig.apiUrl}/seller/shipments/$shipmentId/complete-delivery'));
+    req.headers.addAll(auth.authHeaders); // Accept + Authorization
+    for (final p in photoPaths) {
+      req.files.add(await http.MultipartFile.fromPath('photos[]', p));
+    }
+    req.files.add(await http.MultipartFile.fromPath('signature', signaturePath));
+    final streamed = await _client.send(req).timeout(const Duration(seconds: 90));
+    final res = await http.Response.fromStream(streamed);
+    final data = _decode(res);
+    if (res.statusCode == 200) {
+      return data['message'] as String? ?? '배송완료 처리했습니다.';
+    }
+    throw OrderException(_error(data, res.statusCode));
+  }
+
   // ============ 구매발주 (본사 → 공급사) ============
   Future<({List<PurchaseOrder> rows, String role, List<StatusOption> statuses, bool hasMore})>
       purchaseOrders({String status = 'all', int page = 1}) async {
