@@ -213,11 +213,40 @@ class _BarcodeScanScreenState extends State<BarcodeScanScreen> with WidgetsBindi
                   const Text('다른 앱이 카메라를 사용 중인지 확인하거나, 번호를 직접 입력해 주세요.',
                       textAlign: TextAlign.center,
                       style: TextStyle(color: Colors.white60, fontSize: 13)),
-                  const SizedBox(height: 18),
-                  FilledButton.icon(
-                    onPressed: _manualEntry,
-                    icon: const Icon(Icons.keyboard),
-                    label: const Text('번호 직접 입력'),
+                  const SizedBox(height: 10),
+                  // 원인 진단용 상세 (오류코드/메시지)
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: Colors.white10,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: SelectableText(
+                      '[${error.errorCode.name}] ${error.errorDetails?.message ?? error.errorDetails?.details ?? '상세 없음'}',
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(color: Colors.white54, fontSize: 11),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      OutlinedButton.icon(
+                        onPressed: () => _controller.start(),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: Colors.white,
+                          side: const BorderSide(color: Colors.white38),
+                        ),
+                        icon: const Icon(Icons.refresh),
+                        label: const Text('다시 시도'),
+                      ),
+                      const SizedBox(width: 10),
+                      FilledButton.icon(
+                        onPressed: _manualEntry,
+                        icon: const Icon(Icons.keyboard),
+                        label: const Text('직접 입력'),
+                      ),
+                    ],
                   ),
                 ],
               ),
