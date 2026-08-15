@@ -40,6 +40,34 @@ class _BarcodeScanScreenState extends State<BarcodeScanScreen> {
     Navigator.of(context).pop(code.trim());
   }
 
+  /// 카메라 인식이 안 될 때 대비 — 코드 직접 입력.
+  Future<void> _manualEntry() async {
+    final ctrl = TextEditingController();
+    final code = await showDialog<String>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('직접 입력'),
+        content: TextField(
+          controller: ctrl,
+          autofocus: true,
+          textCapitalization: TextCapitalization.characters,
+          decoration: const InputDecoration(
+            labelText: '번호 입력 (예: PO-20260813-004)',
+            border: OutlineInputBorder(),
+          ),
+          onSubmitted: (v) => Navigator.pop(ctx, v.trim()),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('취소')),
+          FilledButton(onPressed: () => Navigator.pop(ctx, ctrl.text.trim()), child: const Text('확인')),
+        ],
+      ),
+    );
+    ctrl.dispose();
+    if (!mounted) return;
+    if (code != null && code.isNotEmpty) Navigator.of(context).pop(code);
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -49,6 +77,11 @@ class _BarcodeScanScreenState extends State<BarcodeScanScreen> {
         foregroundColor: Colors.white,
         title: Text(widget.title),
         actions: [
+          IconButton(
+            tooltip: '직접 입력',
+            icon: const Icon(Icons.keyboard),
+            onPressed: _manualEntry,
+          ),
           IconButton(
             tooltip: '플래시',
             icon: const Icon(Icons.flash_on),
@@ -64,7 +97,35 @@ class _BarcodeScanScreenState extends State<BarcodeScanScreen> {
       body: Stack(
         alignment: Alignment.center,
         children: [
-          MobileScanner(controller: _controller, onDetect: _onDetect),
+          MobileScanner(
+            controller: _controller,
+            onDetect: _onDetect,
+            errorBuilder: (context, error) => Center(
+              child: Padding(
+                padding: const EdgeInsets.all(28),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.no_photography_outlined, color: Colors.white70, size: 44),
+                    const SizedBox(height: 14),
+                    const Text('카메라를 시작할 수 없습니다.',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w700)),
+                    const SizedBox(height: 6),
+                    const Text('카메라 권한을 확인하거나, 번호를 직접 입력해 주세요.',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(color: Colors.white60, fontSize: 13)),
+                    const SizedBox(height: 18),
+                    FilledButton.icon(
+                      onPressed: _manualEntry,
+                      icon: const Icon(Icons.keyboard),
+                      label: const Text('번호 직접 입력'),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
           // 스캔 가이드 박스
           IgnorePointer(
             child: Container(
