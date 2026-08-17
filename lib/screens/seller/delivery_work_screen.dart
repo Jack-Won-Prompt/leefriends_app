@@ -344,37 +344,183 @@ class _DeliveryWorkScreenState extends State<DeliveryWorkScreen> {
         );
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
-      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: AppColors.surface,
         borderRadius: BorderRadius.circular(14),
         border: Border.all(color: AppColors.line),
       ),
-      child: Row(children: [
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(children: [
-                Flexible(
-                  child: Text(d.orderNo,
-                      style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w800)),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: () => _showProof(d),
+        child: Padding(
+          padding: const EdgeInsets.all(14),
+          child: Row(children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(children: [
+                    Flexible(
+                      child: Text(d.orderNo,
+                          style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w800)),
+                    ),
+                    badge('사진', d.hasPhoto),
+                    badge('서명', d.hasSign),
+                  ]),
+                  const SizedBox(height: 3),
+                  Text(
+                      '${d.storeName ?? ''} · ${d.itemCount}품목'
+                      '${d.deliveredAt != null ? ' · ${d.deliveredAt} 완료' : ''}',
+                      style: const TextStyle(fontSize: 12, color: AppColors.inkSoft)),
+                ],
+              ),
+            ),
+            Text(won(d.orderTotal),
+                style: const TextStyle(
+                    fontSize: 13, fontWeight: FontWeight.w800, color: AppColors.accent)),
+            const Icon(Icons.chevron_right, size: 20, color: AppColors.inkSoft),
+          ]),
+        ),
+      ),
+    );
+  }
+
+  /// 배송완료 항목 탭 — 현장 사진·서명 확인 시트.
+  Future<void> _showProof(DeliveredOrder d) async {
+    await showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: AppColors.cream,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) => DraggableScrollableSheet(
+        initialChildSize: 0.75,
+        minChildSize: 0.4,
+        maxChildSize: 0.95,
+        expand: false,
+        builder: (_, scrollController) => ListView(
+          controller: scrollController,
+          padding: const EdgeInsets.fromLTRB(18, 10, 18, 28),
+          children: [
+            Center(
+              child: Container(
+                width: 40,
+                height: 4,
+                margin: const EdgeInsets.only(bottom: 14),
+                decoration: BoxDecoration(
+                  color: AppColors.line,
+                  borderRadius: BorderRadius.circular(100),
                 ),
-                badge('사진', d.hasPhoto),
-                badge('서명', d.hasSign),
-              ]),
-              const SizedBox(height: 3),
-              Text(
-                  '${d.storeName ?? ''} · ${d.itemCount}품목'
-                  '${d.deliveredAt != null ? ' · ${d.deliveredAt} 완료' : ''}',
-                  style: const TextStyle(fontSize: 12, color: AppColors.inkSoft)),
-            ],
+              ),
+            ),
+            Text(d.orderNo, style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w800)),
+            const SizedBox(height: 4),
+            Text(
+                '${d.storeName ?? ''} · ${d.itemCount}품목 · ${won(d.orderTotal)}'
+                '${d.deliveredAt != null ? '\n$_dateLabel ${d.deliveredAt} 배송완료' : ''}',
+                style: const TextStyle(fontSize: 13, color: AppColors.inkSoft, height: 1.5)),
+            const SizedBox(height: 18),
+            const Text('현장 사진', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w800)),
+            const SizedBox(height: 8),
+            if (d.photos.isEmpty)
+              _emptyBox('등록된 현장 사진이 없습니다')
+            else
+              for (final url in d.photos)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 10),
+                  child: GestureDetector(
+                    onTap: () => _openImage(url, '현장 사진'),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(14),
+                      child: _netImage(url, height: 220),
+                    ),
+                  ),
+                ),
+            const SizedBox(height: 18),
+            const Text('매장 담당자 서명', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w800)),
+            const SizedBox(height: 8),
+            if (d.signature == null)
+              _emptyBox('등록된 서명이 없습니다')
+            else
+              GestureDetector(
+                onTap: () => _openImage(d.signature!, '서명'),
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(color: AppColors.line),
+                  ),
+                  clipBehavior: Clip.antiAlias,
+                  child: _netImage(d.signature!, height: 180, fit: BoxFit.contain),
+                ),
+              ),
+            const SizedBox(height: 10),
+            const Text('이미지를 누르면 크게 볼 수 있습니다.',
+                style: TextStyle(fontSize: 12, color: AppColors.inkSoft)),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _emptyBox(String text) => Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(vertical: 26),
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: AppColors.line),
+        ),
+        child: Text(text, style: const TextStyle(fontSize: 13, color: AppColors.inkSoft)),
+      );
+
+  /// 네트워크 이미지 — 로딩/실패 상태를 자리 채움으로 표시.
+  Widget _netImage(String url, {double? height, BoxFit fit = BoxFit.cover}) => Image.network(
+        url,
+        width: double.infinity,
+        height: height,
+        fit: fit,
+        loadingBuilder: (_, child, progress) => progress == null
+            ? child
+            : SizedBox(
+                height: height,
+                child: const Center(child: CircularProgressIndicator(color: AppColors.accent)),
+              ),
+        errorBuilder: (_, _, _) => Container(
+          height: height,
+          color: AppColors.surface,
+          alignment: Alignment.center,
+          child: const Text('이미지를 불러오지 못했습니다',
+              style: TextStyle(fontSize: 12, color: AppColors.inkSoft)),
+        ),
+      );
+
+  /// 전체화면 이미지 뷰어 (확대/축소 가능).
+  void _openImage(String url, String title) {
+    Navigator.of(context).push(MaterialPageRoute<void>(
+      builder: (_) => Scaffold(
+        backgroundColor: Colors.black,
+        appBar: AppBar(
+          backgroundColor: Colors.black,
+          foregroundColor: Colors.white,
+          title: Text(title),
+        ),
+        body: Center(
+          child: InteractiveViewer(
+            minScale: 0.8,
+            maxScale: 5,
+            child: Image.network(
+              url,
+              fit: BoxFit.contain,
+              errorBuilder: (_, _, _) => const Text('이미지를 불러오지 못했습니다',
+                  style: TextStyle(color: Colors.white70)),
+            ),
           ),
         ),
-        Text(won(d.orderTotal),
-            style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w800, color: AppColors.accent)),
-      ]),
-    );
+      ),
+    ));
   }
 
   Widget _orderCard(SellerOrder s) {

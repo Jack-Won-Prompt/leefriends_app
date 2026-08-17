@@ -415,6 +415,8 @@ class DeliveredOrder {
   final int orderTotal;
   final bool hasPhoto;
   final bool hasSign;
+  final List<String> photos; // 현장 사진 URL
+  final String? signature; // 서명 이미지 URL
 
   const DeliveredOrder({
     required this.id,
@@ -425,6 +427,8 @@ class DeliveredOrder {
     required this.orderTotal,
     required this.hasPhoto,
     required this.hasSign,
+    this.photos = const [],
+    this.signature,
   });
 
   factory DeliveredOrder.fromJson(Map<String, dynamic> j) => DeliveredOrder(
@@ -436,6 +440,8 @@ class DeliveredOrder {
         orderTotal: _i(j['order_total']),
         hasPhoto: j['has_photo'] as bool? ?? false,
         hasSign: j['has_sign'] as bool? ?? false,
+        photos: (j['photos'] as List?)?.whereType<String>().toList() ?? const [],
+        signature: j['signature'] as String?,
       );
 }
 
