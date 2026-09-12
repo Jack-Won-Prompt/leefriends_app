@@ -18,6 +18,7 @@ import 'hq_inventory_screen.dart';
 import 'store_payments_screen.dart';
 import 'inquiries_screen.dart';
 import 'notices_manage_screen.dart';
+import 'notification_logs_screen.dart';
 import 'order_changes_screen.dart';
 import 'products_screen.dart';
 import 'sales_screen.dart';
@@ -482,6 +483,12 @@ class _SellerHomeState extends State<SellerHome> {
           title: '공지 관리',
           sub: '포털 공지 발송',
           onTap: () => _go(NoticesManageScreen(repository: widget.repository)),
+        ),
+        _NavCard(
+          icon: Icons.notifications_active_outlined,
+          title: 'FCM 알림 이력',
+          sub: '본사·매장 알림 발송 내역',
+          onTap: () => _go(NotificationLogsScreen(repository: widget.repository)),
         ),
         _NavCard(
           icon: Icons.contact_mail_outlined,

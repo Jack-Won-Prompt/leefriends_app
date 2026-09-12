@@ -7,6 +7,7 @@ import '../models/edocs.dart';
 import '../models/fulfillment.dart';
 import '../models/hometax.dart';
 import '../models/hq_inventory.dart';
+import '../models/notification_log.dart';
 import '../models/paged.dart';
 import '../models/store_payment.dart';
 import '../models/store_ops.dart' show FruitStorageItem;
@@ -26,6 +27,29 @@ class SellerRepository {
   Future<SellerDashboard> dashboard() async {
     final body = await _get('/seller/dashboard');
     return SellerDashboard.fromJson(body['data'] as Map<String, dynamic>);
+  }
+
+  /// FCM/인앱 알림 이력 (본사). role: all | hq | store, 날짜는 YYYY-MM-DD.
+  Future<NotificationLogPage> notificationLogs({
+    String role = 'all',
+    String? storeId,
+    String? type,
+    required String from,
+    required String to,
+    String q = '',
+    int page = 1,
+  }) async {
+    final query = Uri(queryParameters: {
+      'role': role,
+      'store': ?storeId,
+      'type': ?type,
+      'from': from,
+      'to': to,
+      if (q.isNotEmpty) 'q': q,
+      'page': '$page',
+    }).query;
+    final body = await _get('/seller/notification-logs?$query');
+    return NotificationLogPage.fromJson(body);
   }
 
   // 받은 발주
