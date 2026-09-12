@@ -5,6 +5,7 @@ import '../../models/fulfillment.dart';
 import '../../models/store_ops.dart' show won;
 import '../../theme/app_colors.dart';
 import '../../widgets/dashboard_header.dart';
+import '../../widgets/new_product_banner.dart';
 import 'bank_deposit_screen.dart';
 import 'categories_screen.dart';
 import 'delivery_work_screen.dart';
@@ -214,6 +215,14 @@ class _SellerHomeState extends State<SellerHome> {
             final d = snap.data;
             return Column(
               children: [
+                // 본사: 당일 신규 품목 배너 — 탭하면 품목 관리
+                if (d?.newProducts case final n? when _isHq) ...[
+                  NewProductBanner(
+                    item: n,
+                    onTap: () => _go(ProductsScreen(repository: widget.repository)),
+                  ),
+                  const SizedBox(height: 12),
+                ],
                 Row(children: [
                   _Stat(
                     label: '확인 대기',

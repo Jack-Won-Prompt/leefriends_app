@@ -1,5 +1,7 @@
 // 본사/공급처(판매자) 발주처리·출고 모델.
 
+import 'store_ops.dart' show NewProductHighlight;
+
 int _i(dynamic v) => (v as num?)?.toInt() ?? 0;
 
 class StatusOption {
@@ -19,6 +21,7 @@ class SellerDashboard {
   final int pendingChanges;
   final int todayOrders;
   final List<SellerOrder> recentOrders;
+  final NewProductHighlight? newProducts; // 당일 신규 품목 (본사만, 없으면 null)
 
   const SellerDashboard({
     required this.role,
@@ -29,6 +32,7 @@ class SellerDashboard {
     required this.pendingChanges,
     required this.todayOrders,
     required this.recentOrders,
+    this.newProducts,
   });
 
   factory SellerDashboard.fromJson(Map<String, dynamic> j) => SellerDashboard(
@@ -42,6 +46,7 @@ class SellerDashboard {
         recentOrders: (j['recent_orders'] as List? ?? [])
             .map((e) => SellerOrder.fromJson(e as Map<String, dynamic>))
             .toList(),
+        newProducts: NewProductHighlight.fromJson(j['new_products'] as Map<String, dynamic>?),
       );
 }
 
