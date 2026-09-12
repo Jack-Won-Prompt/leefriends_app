@@ -158,6 +158,7 @@ class StoreDashboard {
   final int inventoryItems;
   final int lowStock;
   final int monthAmount;
+  final NewProductHighlight? newProducts; // 당일 신규 품목 (없으면 null)
 
   const StoreDashboard({
     required this.activeOrders,
@@ -165,6 +166,7 @@ class StoreDashboard {
     required this.inventoryItems,
     required this.lowStock,
     required this.monthAmount,
+    this.newProducts,
   });
 
   factory StoreDashboard.fromJson(Map<String, dynamic> j) => StoreDashboard(
@@ -173,7 +175,46 @@ class StoreDashboard {
         inventoryItems: (j['inventory_items'] as num?)?.toInt() ?? 0,
         lowStock: (j['low_stock'] as num?)?.toInt() ?? 0,
         monthAmount: (j['month_amount'] as num?)?.toInt() ?? 0,
+        newProducts: NewProductHighlight.fromJson(j['new_products'] as Map<String, dynamic>?),
       );
+}
+
+/// 당일 신규 품목 요약 — 매장 홈 상단 배너용. 대표 품목 1개 + 전체 건수.
+class NewProductHighlight {
+  final int count; // 오늘 등록된 신규 품목 수
+  final String name; // 대표 품목
+  final String? imageUrl;
+  final int storePrice;
+  final String unit;
+  final bool isMarketPrice;
+
+  const NewProductHighlight({
+    required this.count,
+    required this.name,
+    required this.imageUrl,
+    required this.storePrice,
+    required this.unit,
+    required this.isMarketPrice,
+  });
+
+  /// 대표 품목을 뺀 나머지 건수 ("외 N건").
+  int get others => count - 1;
+
+  /// 신규 품목이 없으면(구 서버 응답 포함) null.
+  static NewProductHighlight? fromJson(Map<String, dynamic>? j) {
+    if (j == null) return null;
+    final count = (j['count'] as num?)?.toInt() ?? 0;
+    final f = j['featured'] as Map<String, dynamic>?;
+    if (count <= 0 || f == null) return null;
+    return NewProductHighlight(
+      count: count,
+      name: f['name'] as String? ?? '',
+      imageUrl: f['image'] as String?,
+      storePrice: (f['store_price'] as num?)?.toInt() ?? 0,
+      unit: f['unit'] as String? ?? '',
+      isMarketPrice: f['is_market_price'] as bool? ?? false,
+    );
+  }
 }
 
 /// 알림

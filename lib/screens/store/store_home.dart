@@ -3,9 +3,10 @@ import 'package:flutter/material.dart';
 import '../../data/cart_controller.dart';
 import '../../data/order_repository.dart';
 import '../../data/store_ops_repository.dart';
-import '../../models/store_ops.dart' show StoreDashboard, won;
+import '../../models/store_ops.dart' show NewProductHighlight, StoreDashboard, won;
 import '../../theme/app_colors.dart';
 import '../../widgets/dashboard_header.dart';
+import '../../widgets/product_thumb.dart';
 import '../order/catalog_screen.dart';
 import '../seller/fruit_storage_screen.dart';
 import '../order/orders_screen.dart';
@@ -167,6 +168,15 @@ class _StoreHomeState extends State<StoreHome> {
           builder: (context, snap) {
             final d = snap.data;
             return Column(children: [
+              // 당일 신규 품목이 있을 때만 — 대표 품목 + "외 N건", 탭하면 카탈로그
+              if (d?.newProducts case final n?) ...[
+                _NewProductBanner(
+                  item: n,
+                  onTap: () => _push(
+                      context, CatalogScreen(repository: widget.order, cart: widget.cart)),
+                ),
+                const SizedBox(height: 12),
+              ],
               Row(children: [
                 _StoreStat(
                     label: '진행중 발주',
@@ -364,6 +374,75 @@ class _StoreStat extends StatelessWidget {
               ],
             ),
           ),
+        ),
+      ),
+    );
+  }
+}
+
+/// 홈 상단 "오늘의 신규 품목" 배너 — 대표 품목 이미지·이름·가격, 2건 이상이면 "외 N건".
+class _NewProductBanner extends StatelessWidget {
+  const _NewProductBanner({required this.item, required this.onTap});
+  final NewProductHighlight item;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final price = item.isMarketPrice
+        ? '싯가'
+        : '${won(item.storePrice)}${item.unit.isNotEmpty ? ' / ${item.unit}' : ''}';
+    return Material(
+      color: AppColors.surface,
+      borderRadius: BorderRadius.circular(18),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(18),
+        child: Ink(
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(color: AppColors.mango300),
+          ),
+          child: Row(children: [
+            ProductThumb(url: item.imageUrl, size: 64, radius: 14),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: AppColors.mango100,
+                      borderRadius: BorderRadius.circular(100),
+                    ),
+                    child: const Text('오늘의 신규 품목',
+                        style: TextStyle(
+                            fontSize: 11, fontWeight: FontWeight.w800, color: AppColors.mango800)),
+                  ),
+                  const SizedBox(height: 6),
+                  Row(children: [
+                    Flexible(
+                      child: Text(item.name,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                              fontSize: 15, fontWeight: FontWeight.w800, color: AppColors.ink)),
+                    ),
+                    if (item.others > 0)
+                      Text(' 외 ${item.others}건',
+                          style: const TextStyle(
+                              fontSize: 14, fontWeight: FontWeight.w700, color: AppColors.mango700)),
+                  ]),
+                  const SizedBox(height: 2),
+                  Text(price,
+                      style: const TextStyle(
+                          fontSize: 13, fontWeight: FontWeight.w700, color: AppColors.accent)),
+                ],
+              ),
+            ),
+            const Icon(Icons.chevron_right, color: AppColors.inkSoft),
+          ]),
         ),
       ),
     );
