@@ -218,16 +218,45 @@ class _HqInventoryScreenState extends State<HqInventoryScreen> {
             if (v == 'adjust') _openAdjust(r);
             if (v == 'inbound') _openInbound(r);
             if (v == 'notify') _run(() => widget.repository.hqInventoryNotify(r.productId));
+            if (v == 'zero') _confirmZero(r);
           },
           itemBuilder: (_) => [
             const PopupMenuItem(value: 'adjust', child: Text('재고 조정')),
             const PopupMenuItem(value: 'inbound', child: Text('입고(＋)')),
             if (r.managed && (r.qty ?? 0) > 0)
               const PopupMenuItem(value: 'notify', child: Text('입고 알림(전 매장)')),
+            // 재고가 있는 품목만 — 미등록(재고 레코드 없음)·실물 0 은 이미 매장 발주 불가
+            if (r.managed && (r.qty ?? 0) > 0)
+              const PopupMenuItem(
+                value: 'zero',
+                child: Text('재고 없음 처리', style: TextStyle(color: Color(0xFFB02A2A))),
+              ),
           ],
         ),
       ]),
     );
+  }
+
+  /// 품목 '재고 없음'(실물 0) 처리 — 매장 발주 화면에서 재고 없음으로 표시되고 발주 불가.
+  Future<void> _confirmZero(HqInventoryRow r) async {
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('재고 없음 처리'),
+        content: Text('«${r.name}» 재고를 0으로 변경합니다.\n'
+            '매장 발주 화면에 "재고 없음"으로 표시되고 발주할 수 없게 됩니다.\n'
+            '다시 발주받으려면 입고 또는 재고 조정으로 수량을 넣어 주세요.'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('취소')),
+          FilledButton(
+            style: FilledButton.styleFrom(backgroundColor: const Color(0xFFB02A2A)),
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('재고 없음'),
+          ),
+        ],
+      ),
+    );
+    if (ok == true) _run(() => widget.repository.hqInventoryZero([r.productId]));
   }
 
   Future<void> _confirmSeed() async {

@@ -206,6 +206,25 @@ class _ProductTile extends StatelessWidget {
                                 ),
                               ),
                             ],
+                            if (product.outOfStock) ...[
+                              const SizedBox(width: 6),
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 7, vertical: 2),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFFDE2E2),
+                                  borderRadius: BorderRadius.circular(100),
+                                ),
+                                child: const Text(
+                                  '재고 없음',
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w800,
+                                    color: Color(0xFFB02A2A),
+                                  ),
+                                ),
+                              ),
+                            ],
                           ],
                         ),
                         const SizedBox(height: 4),
@@ -230,11 +249,28 @@ class _ProductTile extends StatelessWidget {
               const SizedBox(height: 12),
               Row(
                 children: [
-                  if (product.units.length > 1)
+                  // 재고 없음 품목은 단위 선택(선택 시 담기됨)도 막는다
+                  if (product.units.length > 1 && !product.outOfStock)
                     _UnitSelector(product: product, cart: cart, current: unit),
-                  if (product.units.length > 1) const Spacer(),
-                  if (product.units.length <= 1) const Spacer(),
-                  if (qty == 0)
+                  const Spacer(),
+                  if (product.outOfStock)
+                    // 재발주 등으로 이미 담겨 있으면 뺄 수만 있게, 아니면 비활성
+                    qty > 0
+                        ? TextButton.icon(
+                            onPressed: () => cart.remove(product.id),
+                            style: TextButton.styleFrom(
+                                foregroundColor: const Color(0xFFB02A2A)),
+                            icon: const Icon(Icons.remove_shopping_cart_outlined,
+                                size: 18),
+                            label: const Text('재고 없음 · 빼기',
+                                style: TextStyle(fontWeight: FontWeight.w700)),
+                          )
+                        : const FilledButton.tonal(
+                            onPressed: null,
+                            child: Text('재고 없음',
+                                style: TextStyle(fontWeight: FontWeight.w700)),
+                          )
+                  else if (qty == 0)
                     FilledButton.tonalIcon(
                       onPressed: () => cart.add(product, unit: unit),
                       style: FilledButton.styleFrom(

@@ -35,6 +35,8 @@ class SupplyProduct {
   final bool isMarketPrice;
   final String? imageUrl;
   final List<ProductUnit> units;
+  final int? stockAvailable; // 본사 가용재고 (재고 미관리 품목은 null)
+  final bool outOfStock; // 재고 없음 — 발주 불가
 
   const SupplyProduct({
     required this.id,
@@ -50,6 +52,8 @@ class SupplyProduct {
     required this.isMarketPrice,
     required this.imageUrl,
     required this.units,
+    this.stockAvailable,
+    this.outOfStock = false,
   });
 
   ProductUnit get defaultUnit =>
@@ -71,6 +75,8 @@ class SupplyProduct {
         units: (j['units'] as List? ?? [])
             .map((e) => ProductUnit.fromJson(e as Map<String, dynamic>))
             .toList(),
+        stockAvailable: (j['stock_available'] as num?)?.toInt(),
+        outOfStock: j['out_of_stock'] as bool? ?? false,
       );
 }
 

@@ -256,6 +256,12 @@ class SellerRepository {
     return body['message'] as String? ?? '입고 알림을 전송했습니다.';
   }
 
+  /// 선택 품목 '재고 없음'(실물 0) 처리 — 매장 발주 불가.
+  Future<String> hqInventoryZero(List<int> productIds) async {
+    final body = await _post('/seller/hq-inventory/bulk-zero', {'product_ids': productIds});
+    return body['message'] as String? ?? '재고 없음으로 변경했습니다.';
+  }
+
   // ---- 매장별 입금현황 ----
   String _pq({String period = 'all', int? year, int? month}) {
     final p = <String>['period=$period'];
