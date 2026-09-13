@@ -225,6 +225,7 @@ class AppNotificationItem {
   final String? body;
   final bool isRead;
   final String? createdAt;
+  final Map<String, dynamic>? data; // 알림 부가정보 (예: portal_notice_id)
 
   const AppNotificationItem({
     required this.id,
@@ -233,17 +234,26 @@ class AppNotificationItem {
     required this.body,
     required this.isRead,
     required this.createdAt,
+    this.data,
   });
 
-  factory AppNotificationItem.fromJson(Map<String, dynamic> j) =>
-      AppNotificationItem(
-        id: j['id'] as int,
-        type: j['type'] as String? ?? '',
-        title: j['title'] as String? ?? '',
-        body: j['body'] as String?,
-        isRead: j['is_read'] as bool? ?? false,
-        createdAt: j['created_at'] as String?,
-      );
+  /// 본사 공지 알림이면 공지 id — 탭 시 공지 상세로 이동.
+  int? get portalNoticeId =>
+      type == 'portal_notice' ? int.tryParse('${data?['portal_notice_id'] ?? ''}') : null;
+
+  factory AppNotificationItem.fromJson(Map<String, dynamic> j) {
+    // 서버는 부가정보가 없으면 빈 배열([])로 보낸다 → Map 일 때만 사용
+    final raw = j['data'];
+    return AppNotificationItem(
+      id: j['id'] as int,
+      type: j['type'] as String? ?? '',
+      title: j['title'] as String? ?? '',
+      body: j['body'] as String?,
+      isRead: j['is_read'] as bool? ?? false,
+      createdAt: j['created_at'] as String?,
+      data: raw is Map ? Map<String, dynamic>.from(raw) : null,
+    );
+  }
 }
 
 /// 입고예정(확인된 판매주문)

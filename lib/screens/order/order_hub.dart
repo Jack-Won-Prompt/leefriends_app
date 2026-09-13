@@ -5,6 +5,7 @@ import '../../data/cart_controller.dart';
 import '../../data/chat_repository.dart';
 import '../../data/attendance_repository.dart';
 import '../../data/order_repository.dart';
+import '../../data/push_service.dart';
 import '../../data/schedule_repository.dart';
 import '../../data/seller_repository.dart';
 import '../../data/store_ops_repository.dart';
@@ -14,6 +15,7 @@ import '../chat/chat_list_screen.dart';
 import '../schedule/schedule_screen.dart';
 import '../seller/seller_home.dart';
 import '../store/notifications_screen.dart';
+import '../store/portal_notices_screen.dart';
 import '../store/store_home.dart';
 import 'login_screen.dart';
 
@@ -41,6 +43,39 @@ class _OrderHubState extends State<OrderHub> {
 
   int _unread = 0;
   bool _unreadRequested = false;
+  int? _pendingNoticeId; // 푸시로 연 본사 공지 — 로그인·화면 준비되면 연다
+
+  @override
+  void initState() {
+    super.initState();
+    // 푸시 알림 탭 → 본사 공지면 공지 상세로 (앱 종료 상태에서 열린 경우 포함)
+    PushService.instance.setOpenedHandler(_onPushOpened);
+  }
+
+  @override
+  void dispose() {
+    PushService.instance.clearOpenedHandler(_onPushOpened);
+    super.dispose();
+  }
+
+  void _onPushOpened(Map<String, dynamic> data) {
+    if (data['type'] != 'portal_notice') return;
+    final id = int.tryParse('${data['portal_notice_id'] ?? ''}');
+    if (id == null) return;
+    _pendingNoticeId = id;
+    WidgetsBinding.instance.addPostFrameCallback((_) => _openPendingNotice());
+  }
+
+  /// 로그인돼 있을 때만 연다 — 아직이면 로그인 후 build 에서 다시 시도.
+  void _openPendingNotice() {
+    final id = _pendingNoticeId;
+    if (id == null || !mounted || !widget.auth.isLoggedIn) return;
+    _pendingNoticeId = null;
+    Navigator.of(context).push(MaterialPageRoute(
+      builder: (_) => PortalNoticeDetailScreen(id: id, fetchOne: _ops.portalNotice),
+    ));
+    _refreshUnread();
+  }
 
   Future<void> _refreshUnread() async {
     try {
@@ -87,6 +122,10 @@ class _OrderHubState extends State<OrderHub> {
         if (!_unreadRequested) {
           _unreadRequested = true;
           WidgetsBinding.instance.addPostFrameCallback((_) => _refreshUnread());
+        }
+        // 로그인 전에 눌린 공지 푸시가 남아 있으면 이제 연다
+        if (_pendingNoticeId != null) {
+          WidgetsBinding.instance.addPostFrameCallback((_) => _openPendingNotice());
         }
 
         final user = auth.user!;

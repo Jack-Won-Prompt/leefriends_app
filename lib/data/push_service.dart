@@ -32,6 +32,38 @@ class PushService {
   /// 알림 탭/수신 시 안읽음 배지 갱신용 콜백 (선택).
   VoidCallback? onNotification;
 
+  /// 푸시 알림을 눌러 앱이 열렸을 때 알림 data 를 받는 핸들러 (예: 공지 상세로 이동).
+  void Function(Map<String, dynamic> data)? _openedHandler;
+
+  /// 핸들러가 아직 없을 때(로그인·화면 준비 전) 받은 탭 — 등록되면 전달.
+  Map<String, dynamic>? _pendingOpened;
+
+  /// 화면에서 핸들러 등록/해제(null). 보관 중인 탭이 있으면 즉시 전달한다.
+  void setOpenedHandler(void Function(Map<String, dynamic> data)? handler) {
+    _openedHandler = handler;
+    final pending = _pendingOpened;
+    if (handler != null && pending != null) {
+      _pendingOpened = null;
+      handler(pending);
+    }
+  }
+
+  /// [handler] 가 지금 등록된 것일 때만 해제 — 화면 교체 시 새 화면의 등록을 지우지 않게.
+  void clearOpenedHandler(void Function(Map<String, dynamic> data) handler) {
+    if (_openedHandler == handler) _openedHandler = null;
+  }
+
+  void _handleOpened(RemoteMessage m) {
+    onNotification?.call();
+    final data = Map<String, dynamic>.from(m.data);
+    final handler = _openedHandler;
+    if (handler != null) {
+      handler(data);
+    } else {
+      _pendingOpened = data;
+    }
+  }
+
   Future<void> init(
     AuthController auth, {
     GlobalKey<ScaffoldMessengerState>? messengerKey,
@@ -72,7 +104,14 @@ class PushService {
     });
 
     FirebaseMessaging.onMessage.listen(_onForeground);
-    FirebaseMessaging.onMessageOpenedApp.listen((_) => onNotification?.call());
+    FirebaseMessaging.onMessageOpenedApp.listen(_handleOpened);
+    // 앱이 종료된 상태에서 알림을 눌러 시작된 경우
+    try {
+      final initial = await fm.getInitialMessage();
+      if (initial != null) _handleOpened(initial);
+    } catch (_) {
+      // 무시 — 탭 이동만 못 할 뿐 앱 동작엔 영향 없음
+    }
 
     // 로그인 상태 변화에 따라 토큰 등록, 로그아웃 직전 해제
     auth.addListener(_register);

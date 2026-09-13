@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:http/http.dart' as http;
 
+import '../models/fulfillment.dart' show PortalNoticeItem;
 import '../models/paged.dart';
 import '../models/store_ops.dart';
 import 'api_config.dart';
@@ -135,6 +136,22 @@ class StoreOpsRepository {
 
   Future<void> markRead(int id) => _post('/notifications/$id/read', {});
   Future<void> markAllRead() => _post('/notifications/read-all', {});
+
+  // ---- 본사 공지사항 (매장·공급처 열람) ----
+  Future<Paged<PortalNoticeItem>> portalNotices({int page = 1}) async {
+    final body = await _get('/portal-notices?page=$page');
+    return Paged(
+      items: (body['data'] as List)
+          .map((e) => PortalNoticeItem.fromJson(e as Map<String, dynamic>))
+          .toList(),
+      hasMore: Paged.hasMoreFromMeta(body['meta'] as Map<String, dynamic>?),
+    );
+  }
+
+  Future<PortalNoticeItem> portalNotice(int id) async {
+    final body = await _get('/portal-notices/$id');
+    return PortalNoticeItem.fromJson(body['data'] as Map<String, dynamic>);
+  }
 
   // ---- helpers ----
   Future<Map<String, dynamic>> _get(String path) async {

@@ -12,6 +12,7 @@ import '../seller/fruit_storage_screen.dart';
 import '../order/orders_screen.dart';
 import 'inbound_screen.dart';
 import 'inventory_screen.dart';
+import 'portal_notices_screen.dart';
 import 'purchases_screen.dart';
 import 'tax_invoices_screen.dart';
 
@@ -221,6 +222,18 @@ class _StoreHomeState extends State<StoreHome> {
         _PrimaryCta(
           onTap: () => _push(
               context, CatalogScreen(repository: widget.order, cart: widget.cart)),
+        ),
+        const SizedBox(height: 12),
+        _FlatAction(
+          icon: Icons.campaign_outlined,
+          title: '공지사항',
+          sub: '본사 공지 확인',
+          onTap: () => _push(
+              context,
+              PortalNoticesScreen(
+                fetch: (page) => widget.ops.portalNotices(page: page),
+                fetchOne: widget.ops.portalNotice,
+              )),
         ),
         if (widget.onAttendance != null) ...[
           const SizedBox(height: 12),

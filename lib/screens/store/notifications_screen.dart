@@ -5,6 +5,7 @@ import '../../models/paged.dart';
 import '../../models/store_ops.dart';
 import '../../theme/app_colors.dart';
 import '../../widgets/paged_list_view.dart';
+import 'portal_notices_screen.dart';
 
 class NotificationsScreen extends StatefulWidget {
   const NotificationsScreen({super.key, required this.repository, this.onChanged});
@@ -34,6 +35,14 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       await widget.repository.markRead(n.id);
       widget.onChanged?.call();
       _reload();
+    }
+    // 본사 공지 알림 → 공지 상세 (읽음 처리돼 목록에서 사라져도 공지사항 메뉴에서 다시 볼 수 있음)
+    final noticeId = n.portalNoticeId;
+    if (noticeId != null && mounted) {
+      Navigator.of(context).push(MaterialPageRoute(
+        builder: (_) => PortalNoticeDetailScreen(
+            id: noticeId, fetchOne: widget.repository.portalNotice),
+      ));
     }
   }
 
