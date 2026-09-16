@@ -24,6 +24,8 @@ class CatalogScreen extends StatefulWidget {
 
 class _CatalogScreenState extends State<CatalogScreen> {
   late Future<List<ProductGroup>> _future;
+  final _search = TextEditingController();
+  String _q = ''; // 물품명 검색어
 
   @override
   void initState() {
@@ -31,10 +33,68 @@ class _CatalogScreenState extends State<CatalogScreen> {
     _future = widget.repository.supplyProducts();
   }
 
+  @override
+  void dispose() {
+    _search.dispose();
+    super.dispose();
+  }
+
   Future<void> _reload() async {
     setState(() { _future = widget.repository.supplyProducts(); });
     await _future;
   }
+
+  /// 품목명·코드·규격으로 거른다. 검색어가 없으면 전체, 남는 품목이 없는 분류는 제외.
+  List<ProductGroup> _filter(List<ProductGroup> groups) {
+    final q = _q.trim().toLowerCase();
+    if (q.isEmpty) return groups;
+    final out = <ProductGroup>[];
+    for (final g in groups) {
+      final matched = g.products
+          .where((p) =>
+              p.name.toLowerCase().contains(q) ||
+              p.code.toLowerCase().contains(q) ||
+              (p.spec ?? '').toLowerCase().contains(q))
+          .toList();
+      if (matched.isNotEmpty) {
+        out.add(ProductGroup(
+            category: g.category, categoryCode: g.categoryCode, products: matched));
+      }
+    }
+    return out;
+  }
+
+  Widget _searchBar() => Padding(
+        padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+        child: TextField(
+          controller: _search,
+          textInputAction: TextInputAction.search,
+          onChanged: (v) => setState(() => _q = v),
+          style: const TextStyle(fontSize: 14, color: AppColors.ink),
+          decoration: InputDecoration(
+            hintText: '물품명 검색',
+            isDense: true,
+            filled: true,
+            fillColor: AppColors.surface,
+            prefixIcon: const Icon(Icons.search, color: AppColors.inkSoft),
+            suffixIcon: _q.isEmpty
+                ? null
+                : IconButton(
+                    icon: const Icon(Icons.close, size: 18, color: AppColors.inkSoft),
+                    onPressed: () {
+                      _search.clear();
+                      setState(() => _q = '');
+                    },
+                  ),
+            border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(14),
+                borderSide: const BorderSide(color: AppColors.line)),
+            enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(14),
+                borderSide: const BorderSide(color: AppColors.line)),
+          ),
+        ),
+      );
 
   void _openCart() {
     Navigator.of(context).push(
@@ -52,6 +112,7 @@ class _CatalogScreenState extends State<CatalogScreen> {
       appBar: AppBar(title: const Text('물품 발주')),
       body: Column(
         children: [
+          _searchBar(),
           Expanded(
             child: RefreshIndicator(
             color: AppColors.accent,
@@ -70,11 +131,14 @@ class _CatalogScreenState extends State<CatalogScreen> {
                     onRetry: _reload,
                   );
                 }
-                final groups = snap.data ?? const [];
+                final groups = _filter(snap.data ?? const []);
                 if (groups.isEmpty) {
-                  return const Center(
-                    child: Text('등록된 물품이 없습니다',
-                        style: TextStyle(color: AppColors.inkSoft)),
+                  return Center(
+                    child: Text(
+                        _q.trim().isEmpty
+                            ? '등록된 물품이 없습니다'
+                            : '«${_q.trim()}» 검색 결과가 없습니다',
+                        style: const TextStyle(color: AppColors.inkSoft)),
                   );
                 }
                 return ListView(

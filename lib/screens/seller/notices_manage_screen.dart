@@ -109,6 +109,70 @@ class _NoticesManageScreenState extends State<NoticesManageScreen> {
     }
   }
 
+  /// 발송 이력 항목 — 전체 내용 보기 (목록은 두 줄까지만 보여줌).
+  void _openDetail(PortalNoticeItem n) {
+    showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: AppColors.cream,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      builder: (ctx) => DraggableScrollableSheet(
+        initialChildSize: 0.6,
+        minChildSize: 0.3,
+        maxChildSize: 0.95,
+        expand: false,
+        builder: (_, controller) => ListView(
+          controller: controller,
+          padding: const EdgeInsets.fromLTRB(20, 10, 20, 28),
+          children: [
+            Center(
+              child: Container(
+                width: 40,
+                height: 4,
+                margin: const EdgeInsets.only(bottom: 14),
+                decoration: BoxDecoration(
+                    color: AppColors.line, borderRadius: BorderRadius.circular(100)),
+              ),
+            ),
+            Row(children: [
+              if (n.isPinned)
+                const Padding(
+                  padding: EdgeInsets.only(right: 4),
+                  child: Icon(Icons.push_pin, size: 14, color: AppColors.accent),
+                ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                decoration: BoxDecoration(
+                    color: AppColors.mango100, borderRadius: BorderRadius.circular(6)),
+                child: Text(n.audienceLabel,
+                    style: const TextStyle(
+                        fontSize: 11, fontWeight: FontWeight.w700, color: AppColors.mango800)),
+              ),
+              const Spacer(),
+              Text(
+                  [
+                    if ((n.author ?? '').isNotEmpty) n.author!,
+                    if (n.createdAt != null) n.createdAt!,
+                  ].join(' · '),
+                  style: const TextStyle(fontSize: 11, color: AppColors.inkSoft)),
+            ]),
+            const SizedBox(height: 10),
+            Text(n.title,
+                style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w800, height: 1.35)),
+            const SizedBox(height: 14),
+            const Divider(height: 1, color: AppColors.line),
+            const SizedBox(height: 14),
+            SelectableText(
+              (n.content ?? '').isEmpty ? '내용이 없습니다.' : n.content!,
+              style: const TextStyle(fontSize: 15, color: AppColors.ink, height: 1.65),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Future<void> _delete(PortalNoticeItem n) async {
     final ok = await showDialog<bool>(
       context: context,
@@ -164,7 +228,9 @@ class _NoticesManageScreenState extends State<NoticesManageScreen> {
             itemCount: list.length,
             itemBuilder: (context, i) {
               final n = list[i];
-              return Container(
+              return GestureDetector(
+                onTap: () => _openDetail(n),
+                child: Container(
                 margin: const EdgeInsets.only(bottom: 10),
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
@@ -185,6 +251,11 @@ class _NoticesManageScreenState extends State<NoticesManageScreen> {
                         decoration: BoxDecoration(color: AppColors.mango100, borderRadius: BorderRadius.circular(6)),
                         child: Text(n.audienceLabel, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: AppColors.mango800)),
                       ),
+                      if ((n.author ?? '').isNotEmpty) ...[
+                        const SizedBox(width: 6),
+                        Text(n.author!,
+                            style: const TextStyle(fontSize: 11, color: AppColors.inkSoft)),
+                      ],
                       const Spacer(),
                       Text(n.createdAt ?? '', style: const TextStyle(fontSize: 11, color: AppColors.inkSoft)),
                       IconButton(
@@ -201,6 +272,7 @@ class _NoticesManageScreenState extends State<NoticesManageScreen> {
                           style: const TextStyle(fontSize: 13, color: AppColors.inkSoft, height: 1.4)),
                     ],
                   ],
+                ),
                 ),
               );
             },
