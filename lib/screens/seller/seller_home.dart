@@ -100,12 +100,13 @@ class _SellerHomeState extends State<SellerHome> {
   }
 
   /// 업무 대분류 탭 정의 (역할에 따라 동적).
+  /// 본사 배송업무·재고는 홈 «바로가기»로 이동해 탭 과다(7→5)를 해소.
   List<_TabDef> get _tabs => [
         _TabDef(
-          icon: Icons.assignment_outlined,
-          activeIcon: Icons.assignment,
-          label: '발주',
-          page: _orderTab,
+          icon: Icons.dashboard_outlined,
+          activeIcon: Icons.dashboard_rounded,
+          label: '홈',
+          page: _homeTab,
         ),
         _TabDef(
           icon: Icons.local_shipping_outlined,
@@ -113,14 +114,6 @@ class _SellerHomeState extends State<SellerHome> {
           label: '출고',
           page: _shipTab,
         ),
-        // (탭 클릭 시 바로 출고 화면)
-        if (_isHq)
-          _TabDef(
-            icon: Icons.assignment_turned_in_outlined,
-            activeIcon: Icons.assignment_turned_in,
-            label: '배송',
-            page: _deliveryTab,
-          ),
         _TabDef(
           icon: Icons.payments_outlined,
           activeIcon: Icons.payments,
@@ -135,13 +128,6 @@ class _SellerHomeState extends State<SellerHome> {
         ),
         if (_isHq)
           _TabDef(
-            icon: Icons.warehouse_outlined,
-            activeIcon: Icons.warehouse,
-            label: '재고',
-            page: _hqInventoryTab,
-          ),
-        if (_isHq)
-          _TabDef(
             icon: Icons.store_outlined,
             activeIcon: Icons.store,
             label: '거래처',
@@ -149,8 +135,12 @@ class _SellerHomeState extends State<SellerHome> {
           ),
       ];
 
-  // 본사 재고 탭 — HqInventoryScreen 임베드
-  Widget _hqInventoryTab() => HqInventoryScreen(repository: widget.repository, embedded: true);
+  Widget _sectionTitle(String text) => Padding(
+        padding: const EdgeInsets.fromLTRB(4, 2, 4, 10),
+        child: Text(text,
+            style: const TextStyle(
+                fontSize: 16, fontWeight: FontWeight.w800, color: AppColors.ink)),
+      );
 
   @override
   Widget build(BuildContext context) {
@@ -208,8 +198,9 @@ class _SellerHomeState extends State<SellerHome> {
     );
   }
 
-  // ── 발주: 요약 KPI + 발주 처리 + 최근 발주 ──
-  Widget _orderTab() => _tabBody([
+  // ── 홈: 처리 현황 + 바로가기 + 최근 발주 ──
+  Widget _homeTab() => _tabBody([
+        _sectionTitle('처리 현황'),
         FutureBuilder<SellerDashboard>(
           future: _future,
           builder: (context, snap) {
@@ -274,7 +265,8 @@ class _SellerHomeState extends State<SellerHome> {
             );
           },
         ),
-        const SizedBox(height: 14),
+        const SizedBox(height: 18),
+        _sectionTitle('바로가기'),
         _NavCard(
           icon: Icons.inbox_outlined,
           title: '받은 발주',
@@ -307,6 +299,20 @@ class _SellerHomeState extends State<SellerHome> {
             sub: '공급처 명세서 입고 · 수동 입고',
             onTap: () => _go(LogisticsInboundScreen(
                 repository: widget.repository, onChanged: widget.onChanged)),
+          ),
+        if (_isHq)
+          _NavCard(
+            icon: Icons.assignment_turned_in_outlined,
+            title: '배송 업무',
+            sub: '출고지시서 QR · 사진 · 서명',
+            onTap: () => _go(DeliveryWorkScreen(repository: widget.repository)),
+          ),
+        if (_isHq)
+          _NavCard(
+            icon: Icons.warehouse_outlined,
+            title: '본사 재고',
+            sub: '재고 현황 · 조정',
+            onTap: () => _go(HqInventoryScreen(repository: widget.repository)),
           ),
         _NavCard(
           icon: Icons.shopping_cart_outlined,
@@ -391,9 +397,6 @@ class _SellerHomeState extends State<SellerHome> {
         onChanged: widget.onChanged,
         embedded: true,
       );
-
-  // ── 배송업무(본사) — 출고지시서 QR 스캔 → 사진·서명 → 배송완료 ──
-  Widget _deliveryTab() => DeliveryWorkScreen(repository: widget.repository, embedded: true);
 
   // ── 정산·전자문서 ──
   Widget _settleTab() => _tabBody([
