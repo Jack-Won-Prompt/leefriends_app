@@ -112,9 +112,8 @@ class _StoreHomeState extends State<StoreHome> {
               index: _tab,
               children: [
                 _homeTab(),
-                _orderPurchaseTab(),
+                _orderTab(),
                 _inventoryTab(),
-                _docsTab(),
               ],
             ),
           ),
@@ -148,21 +147,24 @@ class _StoreHomeState extends State<StoreHome> {
               BottomNavigationBarItem(
                   icon: Icon(Icons.receipt_long_outlined),
                   activeIcon: Icon(Icons.receipt_long),
-                  label: '발주·매입'),
+                  label: '발주'),
               BottomNavigationBarItem(
                   icon: Icon(Icons.inventory_2_outlined),
                   activeIcon: Icon(Icons.inventory_2),
                   label: '재고'),
-              BottomNavigationBarItem(
-                  icon: Icon(Icons.description_outlined),
-                  activeIcon: Icon(Icons.description),
-                  label: '전자문서'),
             ],
           ),
         ),
       );
 
-  // ── 홈(요약) ──
+  Widget _sectionTitle(String text) => Align(
+        alignment: Alignment.centerLeft,
+        child: Text(text,
+            style: const TextStyle(
+                fontSize: 15, fontWeight: FontWeight.w800, color: AppColors.ink)),
+      );
+
+  // ── 홈(요약 대시보드) — 현황 한눈에 + 겹치지 않는 빠른 실행 ──
   Widget _homeTab() => _tabBody([
         FutureBuilder<StoreDashboard>(
           future: _dash,
@@ -176,8 +178,10 @@ class _StoreHomeState extends State<StoreHome> {
                   onTap: () => _push(
                       context, CatalogScreen(repository: widget.order, cart: widget.cart)),
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: 16),
               ],
+              _sectionTitle('우리 매장 현황'),
+              const SizedBox(height: 10),
               Row(children: [
                 _StoreStat(
                     label: '진행중 발주',
@@ -201,7 +205,7 @@ class _StoreHomeState extends State<StoreHome> {
                     value: d?.inventoryItems,
                     hint: '부족 ${d?.lowStock ?? '-'}',
                     color: const Color(0xFF1B6CC4),
-                    onTap: () => _push(context, InventoryScreen(repository: widget.ops))),
+                    onTap: () => setState(() => _tab = 2)), // 재고 탭으로 전환
                 const SizedBox(width: 12),
                 _StoreStat(
                     label: '이번 달 매입',
@@ -218,41 +222,53 @@ class _StoreHomeState extends State<StoreHome> {
             ]);
           },
         ),
-        const SizedBox(height: 20),
-        _PrimaryCta(
-          onTap: () => _push(
-              context, CatalogScreen(repository: widget.order, cart: widget.cart)),
-        ),
-        const SizedBox(height: 12),
-        _FlatAction(
-          icon: Icons.campaign_outlined,
-          title: '공지사항',
-          sub: '본사 공지 확인',
-          onTap: () => _push(
-              context,
-              PortalNoticesScreen(
-                fetch: (page) => widget.ops.portalNotices(page: page),
-                fetchOne: widget.ops.portalNotice,
-              )),
-        ),
-        if (widget.onAttendance != null) ...[
-          const SizedBox(height: 12),
-          _FlatAction(
-            icon: Icons.how_to_reg_outlined,
-            title: '출근관리',
-            sub: '출퇴근 · 휴무 · 급여',
-            onTap: widget.onAttendance!,
+        const SizedBox(height: 22),
+        _sectionTitle('빠른 실행'),
+        const SizedBox(height: 10),
+        _grid([
+          _FeatureCard(
+            icon: Icons.description_outlined,
+            title: '세금계산서',
+            sub: '본사 발행분',
+            onTap: () => _push(context, TaxInvoicesScreen(repository: widget.ops)),
           ),
-        ],
+          _FeatureCard(
+            icon: Icons.ac_unit_outlined,
+            title: '과일 보관',
+            sub: '보관 가이드',
+            onTap: () => _push(
+                context, FruitStorageScreen.readonly(repository: widget.ops)),
+          ),
+          _FeatureCard(
+            icon: Icons.campaign_outlined,
+            title: '공지사항',
+            sub: '본사 공지',
+            onTap: () => _push(
+                context,
+                PortalNoticesScreen(
+                  fetch: (page) => widget.ops.portalNotices(page: page),
+                  fetchOne: widget.ops.portalNotice,
+                )),
+          ),
+          if (widget.onAttendance != null)
+            _FeatureCard(
+              icon: Icons.how_to_reg_outlined,
+              title: '출근관리',
+              sub: '출퇴근·휴무',
+              onTap: widget.onAttendance!,
+            ),
+        ]),
       ]);
 
-  // ── 발주·매입 ──
-  Widget _orderPurchaseTab() => _tabBody([
+  // ── 발주 — 발주하기(CTA) + 발주/매입 내역 (발주 관련 단일 진입) ──
+  Widget _orderTab() => _tabBody([
         _PrimaryCta(
           onTap: () => _push(
               context, CatalogScreen(repository: widget.order, cart: widget.cart)),
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: 18),
+        _sectionTitle('발주 관리'),
+        const SizedBox(height: 10),
         _grid([
           _FeatureCard(
             icon: Icons.receipt_long_outlined,
@@ -266,13 +282,6 @@ class _StoreHomeState extends State<StoreHome> {
             sub: '기간별 합계',
             onTap: () => _push(context,
                 PurchasesScreen(repository: widget.ops, orderRepository: widget.order)),
-          ),
-          _FeatureCard(
-            icon: Icons.ac_unit_outlined,
-            title: '과일 보관 가이드',
-            sub: '본사 공유 보관법',
-            onTap: () => _push(
-                context, FruitStorageScreen.readonly(repository: widget.ops)),
           ),
         ]),
       ]);
@@ -315,17 +324,6 @@ class _StoreHomeState extends State<StoreHome> {
         ],
       );
 
-  // ── 전자문서 ──
-  Widget _docsTab() => _tabBody([
-        _grid([
-          _FeatureCard(
-            icon: Icons.description_outlined,
-            title: '세금계산서',
-            sub: '본사 발행분',
-            onTap: () => _push(context, TaxInvoicesScreen(repository: widget.ops)),
-          ),
-        ]),
-      ]);
 }
 
 class _StoreStat extends StatelessWidget {
@@ -452,56 +450,6 @@ class _PrimaryCta extends StatelessWidget {
               const Icon(Icons.arrow_forward_rounded, color: Colors.white),
             ],
           ),
-        ),
-      ),
-    );
-  }
-}
-
-/// 홈 탭 전체폭 액션 카드 (근태 등).
-class _FlatAction extends StatelessWidget {
-  const _FlatAction(
-      {required this.icon, required this.title, required this.sub, required this.onTap});
-  final IconData icon;
-  final String title;
-  final String sub;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: AppColors.surface,
-      borderRadius: BorderRadius.circular(18),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(18),
-        child: Ink(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(18),
-            border: Border.all(color: AppColors.line),
-          ),
-          child: Row(children: [
-            Container(
-              width: 44,
-              height: 44,
-              decoration: BoxDecoration(
-                  color: AppColors.mango100, borderRadius: BorderRadius.circular(12)),
-              alignment: Alignment.center,
-              child: Icon(icon, color: AppColors.mango700, size: 22),
-            ),
-            const SizedBox(width: 14),
-            Expanded(
-              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Text(title,
-                    style: const TextStyle(
-                        fontSize: 15, fontWeight: FontWeight.w800, color: AppColors.ink)),
-                const SizedBox(height: 2),
-                Text(sub, style: const TextStyle(fontSize: 12, color: AppColors.inkSoft)),
-              ]),
-            ),
-            const Icon(Icons.chevron_right, color: AppColors.inkSoft),
-          ]),
         ),
       ),
     );
