@@ -10,7 +10,6 @@ import 'bank_deposit_screen.dart';
 import 'categories_screen.dart';
 import 'delivery_work_screen.dart';
 import 'fruit_storage_screen.dart';
-import 'logistics_inbound_screen.dart';
 import 'purchase_orders_screen.dart';
 import 'shipment_waiting_screen.dart';
 import 'hometax_screen.dart';
@@ -19,7 +18,6 @@ import 'store_payments_screen.dart';
 import 'inquiries_screen.dart';
 import 'notices_manage_screen.dart';
 import 'notification_logs_screen.dart';
-import 'order_changes_screen.dart';
 import 'products_screen.dart';
 import 'sales_screen.dart';
 import 'seller_orders_screen.dart';
@@ -30,7 +28,6 @@ import 'seller_shipments_screen.dart';
 import 'seller_statements_screen.dart';
 import 'seller_tax_invoices_screen.dart';
 import 'seller_widgets.dart';
-import 'supplier_orders_screen.dart';
 
 /// 본사/공급처 로그인 후 카드형 홈 대시보드 — 처리 대기 요약 + 메뉴.
 class SellerHome extends StatefulWidget {
@@ -281,32 +278,6 @@ class _SellerHomeState extends State<SellerHome> {
           onTap: () => _go(SellerOrdersScreen(
               repository: widget.repository, isHq: _isHq, onChanged: widget.onChanged)),
         ),
-        FutureBuilder<SellerDashboard>(
-          future: _future,
-          builder: (context, snap) => _NavCard(
-            icon: Icons.published_with_changes_outlined,
-            title: '주문 변경 반영',
-            sub: '매장 발주 수정/취소 확인',
-            badge: snap.data?.pendingChanges ?? 0,
-            onTap: () => _go(OrderChangesScreen(
-                repository: widget.repository, onChanged: _reload)),
-          ),
-        ),
-        if (_isHq)
-          _NavCard(
-            icon: Icons.inventory_outlined,
-            title: '공급사 발주 현황',
-            sub: '공급사별 발주 모아보기',
-            onTap: () => _go(SupplierOrdersScreen(repository: widget.repository)),
-          ),
-        if (_isHq)
-          _NavCard(
-            icon: Icons.local_shipping_outlined,
-            title: '본사 물류 입고',
-            sub: '공급처 명세서 입고 · 수동 입고',
-            onTap: () => _go(LogisticsInboundScreen(
-                repository: widget.repository, onChanged: widget.onChanged)),
-          ),
         if (_isHq)
           _NavCard(
             icon: Icons.warehouse_outlined,
@@ -583,13 +554,11 @@ class _NavCard extends StatelessWidget {
     required this.title,
     required this.sub,
     required this.onTap,
-    this.badge = 0,
   });
   final IconData icon;
   final String title;
   final String sub;
   final VoidCallback onTap;
-  final int badge;
 
   @override
   Widget build(BuildContext context) {
@@ -629,16 +598,6 @@ class _NavCard extends StatelessWidget {
                   ],
                 ),
               ),
-              if (badge > 0)
-                Container(
-                  margin: const EdgeInsets.only(right: 6),
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                  decoration: BoxDecoration(
-                      color: AppColors.accent, borderRadius: BorderRadius.circular(100)),
-                  child: Text('$badge',
-                      style: const TextStyle(
-                          color: Colors.white, fontSize: 12, fontWeight: FontWeight.w800)),
-                ),
               const Icon(Icons.chevron_right, color: AppColors.inkSoft),
             ]),
           ),
