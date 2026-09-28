@@ -72,6 +72,7 @@ class _StoreHomeState extends State<StoreHome> {
         crossAxisCount: 2,
         shrinkWrap: true,
         physics: const NeverScrollableScrollPhysics(),
+        padding: EdgeInsets.zero, // 중첩 그리드가 MediaQuery 여백을 상속해 상단 간격이 벌어지는 것 방지
         mainAxisSpacing: 12,
         crossAxisSpacing: 12,
         childAspectRatio: 1.25,
