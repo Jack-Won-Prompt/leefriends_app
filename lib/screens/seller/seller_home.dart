@@ -100,7 +100,7 @@ class _SellerHomeState extends State<SellerHome> {
   }
 
   /// 업무 대분류 탭 정의 (역할에 따라 동적).
-  /// 본사 배송업무·재고는 홈 «바로가기»로 이동해 탭 과다(7→5)를 해소.
+  /// 본사 재고는 홈 «바로가기»로 이동해 탭 과다를 해소(7→6).
   List<_TabDef> get _tabs => [
         _TabDef(
           icon: Icons.dashboard_outlined,
@@ -114,6 +114,13 @@ class _SellerHomeState extends State<SellerHome> {
           label: '출고',
           page: _shipTab,
         ),
+        if (_isHq)
+          _TabDef(
+            icon: Icons.assignment_turned_in_outlined,
+            activeIcon: Icons.assignment_turned_in,
+            label: '배송',
+            page: _deliveryTab,
+          ),
         _TabDef(
           icon: Icons.payments_outlined,
           activeIcon: Icons.payments,
@@ -302,13 +309,6 @@ class _SellerHomeState extends State<SellerHome> {
           ),
         if (_isHq)
           _NavCard(
-            icon: Icons.assignment_turned_in_outlined,
-            title: '배송 업무',
-            sub: '출고지시서 QR · 사진 · 서명',
-            onTap: () => _go(DeliveryWorkScreen(repository: widget.repository)),
-          ),
-        if (_isHq)
-          _NavCard(
             icon: Icons.warehouse_outlined,
             title: '본사 재고',
             sub: '재고 현황 · 조정',
@@ -397,6 +397,9 @@ class _SellerHomeState extends State<SellerHome> {
         onChanged: widget.onChanged,
         embedded: true,
       );
+
+  // ── 배송업무(본사) — 출고지시서 QR 스캔 → 사진·서명 → 배송완료 ──
+  Widget _deliveryTab() => DeliveryWorkScreen(repository: widget.repository, embedded: true);
 
   // ── 정산·전자문서 ──
   Widget _settleTab() => _tabBody([
