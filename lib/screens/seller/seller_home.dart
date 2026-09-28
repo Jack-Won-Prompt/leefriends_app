@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 
 import '../../data/seller_repository.dart';
 import '../../models/fulfillment.dart';
-import '../../models/store_ops.dart' show won;
 import '../../theme/app_colors.dart';
 import '../../widgets/dashboard_header.dart';
 import '../../widgets/new_product_banner.dart';
@@ -27,7 +26,6 @@ import 'seller_sales_orders_screen.dart';
 import 'seller_shipments_screen.dart';
 import 'seller_statements_screen.dart';
 import 'seller_tax_invoices_screen.dart';
-import 'seller_widgets.dart';
 
 /// 본사/공급처 로그인 후 카드형 홈 대시보드 — 처리 대기 요약 + 메뉴.
 class SellerHome extends StatefulWidget {
@@ -144,6 +142,17 @@ class _SellerHomeState extends State<SellerHome> {
         child: Text(text,
             style: const TextStyle(
                 fontSize: 16, fontWeight: FontWeight.w800, color: AppColors.ink)),
+      );
+
+  // 2칸 박스 그리드 (처리 현황과 동일 톤의 바로가기 타일용)
+  Widget _grid(List<Widget> cards) => GridView.count(
+        crossAxisCount: 2,
+        shrinkWrap: true,
+        physics: const NeverScrollableScrollPhysics(),
+        mainAxisSpacing: 12,
+        crossAxisSpacing: 12,
+        childAspectRatio: 1.3,
+        children: cards,
       );
 
   @override
@@ -271,95 +280,36 @@ class _SellerHomeState extends State<SellerHome> {
         ),
         const SizedBox(height: 18),
         _sectionTitle('바로가기'),
-        _NavCard(
-          icon: Icons.inbox_outlined,
-          title: '받은 발주',
-          sub: '매장 발주 확인(발주확인) · 품목·정산·문서',
-          onTap: () => _go(SellerOrdersScreen(
-              repository: widget.repository, isHq: _isHq, onChanged: widget.onChanged)),
-        ),
-        if (_isHq)
-          _NavCard(
-            icon: Icons.warehouse_outlined,
-            title: '본사 재고',
-            sub: '재고 현황 · 조정',
-            onTap: () => _go(HqInventoryScreen(repository: widget.repository)),
+        _grid([
+          _MenuTile(
+            icon: Icons.inbox_outlined,
+            title: '받은 발주',
+            sub: '발주확인·정산·문서',
+            onTap: () => _go(SellerOrdersScreen(
+                repository: widget.repository, isHq: _isHq, onChanged: widget.onChanged)),
           ),
-        _NavCard(
-          icon: Icons.shopping_cart_outlined,
-          title: '구매발주',
-          sub: _isHq ? '공급사에 발주 · 입고' : '본사 구매발주 확인',
-          onTap: () => _go(PurchaseOrdersScreen(
-              repository: widget.repository, isHq: _isHq, onChanged: widget.onChanged)),
-        ),
-        if (widget.onAttendance != null)
-          _NavCard(
-            icon: Icons.how_to_reg_outlined,
-            title: '출근관리',
-            sub: '출퇴근·휴무 승인 / 급여',
-            onTap: widget.onAttendance!,
+          if (_isHq)
+            _MenuTile(
+              icon: Icons.warehouse_outlined,
+              title: '본사 재고',
+              sub: '재고 현황·조정',
+              onTap: () => _go(HqInventoryScreen(repository: widget.repository)),
+            ),
+          _MenuTile(
+            icon: Icons.shopping_cart_outlined,
+            title: '구매발주',
+            sub: _isHq ? '공급사 발주·입고' : '본사 구매발주 확인',
+            onTap: () => _go(PurchaseOrdersScreen(
+                repository: widget.repository, isHq: _isHq, onChanged: widget.onChanged)),
           ),
-        const SizedBox(height: 8),
-        FutureBuilder<SellerDashboard>(
-          future: _future,
-          builder: (context, snap) {
-            final recent = snap.data?.recentOrders ?? const [];
-            if (recent.isEmpty) return const SizedBox.shrink();
-            return Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Padding(
-                  padding: EdgeInsets.fromLTRB(4, 6, 4, 10),
-                  child: Text('최근 발주 현황',
-                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800)),
-                ),
-                for (final o in recent)
-                  GestureDetector(
-                    onTap: () => _go(SellerOrderDetailScreen(
-                        repository: widget.repository, id: o.id)),
-                    child: Container(
-                      margin: const EdgeInsets.only(bottom: 8),
-                      padding: const EdgeInsets.all(14),
-                      decoration: BoxDecoration(
-                        color: AppColors.surface,
-                        borderRadius: BorderRadius.circular(14),
-                        border: Border.all(color: AppColors.line),
-                      ),
-                      child: Row(
-                        children: [
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Row(children: [
-                                  Expanded(
-                                    child: Text(o.orderNo,
-                                        style: const TextStyle(
-                                            fontSize: 13, fontWeight: FontWeight.w800)),
-                                  ),
-                                  FulfillStatusChip(status: o.status, label: o.statusLabel),
-                                ]),
-                                const SizedBox(height: 4),
-                                Text('${o.storeName ?? ''} · ${o.itemCount}품목 · ${o.createdAt ?? ''}',
-                                    style: const TextStyle(
-                                        fontSize: 12, color: AppColors.inkSoft)),
-                              ],
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Text(won(o.storeAmount),
-                              style: const TextStyle(
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.w800,
-                                  color: AppColors.accent)),
-                        ],
-                      ),
-                    ),
-                  ),
-              ],
-            );
-          },
-        ),
+          if (widget.onAttendance != null)
+            _MenuTile(
+              icon: Icons.how_to_reg_outlined,
+              title: '출근관리',
+              sub: '출퇴근·휴무·급여',
+              onTap: widget.onAttendance!,
+            ),
+        ]),
       ]);
 
   // ── 출고·배송 — 탭 클릭 시 주문 단위 출고 대기(임베드) ──
@@ -541,6 +491,70 @@ class _Stat extends StatelessWidget {
                 Text(hint, style: const TextStyle(fontSize: 11, color: AppColors.inkSoft)),
               ],
             ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// 바로가기 박스 타일 (2칸 그리드용) — 아이콘 + 제목 + 부제.
+class _MenuTile extends StatelessWidget {
+  const _MenuTile({
+    required this.icon,
+    required this.title,
+    required this.sub,
+    required this.onTap,
+  });
+  final IconData icon;
+  final String title;
+  final String sub;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: AppColors.surface,
+      borderRadius: BorderRadius.circular(18),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(18),
+        child: Ink(
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(color: AppColors.line),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                    color: AppColors.mango100, borderRadius: BorderRadius.circular(12)),
+                alignment: Alignment.center,
+                child: Icon(icon, color: AppColors.mango700, size: 21),
+              ),
+              const SizedBox(height: 8),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(title,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                          fontSize: 15, fontWeight: FontWeight.w800, color: AppColors.ink)),
+                  const SizedBox(height: 1),
+                  Text(sub,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(fontSize: 12, color: AppColors.inkSoft)),
+                ],
+              ),
+            ],
           ),
         ),
       ),
