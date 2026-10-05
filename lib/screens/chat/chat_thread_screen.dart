@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -16,12 +17,16 @@ class ChatThreadScreen extends StatefulWidget {
     required this.conversationId,
     required this.title,
     this.onRead,
+    this.embedded = false,
   });
 
   final ChatRepository repository;
   final int conversationId;
   final String title;
   final VoidCallback? onRead;
+
+  /// 셸 하단 탭에 삽입될 때 true — Scaffold/AppBar 없이 본문+입력만.
+  final bool embedded;
 
   @override
   State<ChatThreadScreen> createState() => _ChatThreadScreenState();
@@ -145,12 +150,24 @@ class _ChatThreadScreenState extends State<ChatThreadScreen> {
               title: const Text('갤러리에서 선택'),
               onTap: () => Navigator.pop(ctx, 'gallery'),
             ),
+            ListTile(
+              leading: const Icon(Icons.attach_file, color: AppColors.accent),
+              title: const Text('파일 첨부'),
+              subtitle: const Text('PDF·문서·엑셀 등', style: TextStyle(fontSize: 12)),
+              onTap: () => Navigator.pop(ctx, 'file'),
+            ),
           ],
         ),
       ),
     );
     if (choice == null) return;
     try {
+      if (choice == 'file') {
+        final res = await FilePicker.platform.pickFiles(withData: false);
+        final path = res?.files.single.path;
+        if (path != null) await _sendFile(path);
+        return;
+      }
       final x = await ImagePicker().pickImage(
         source: choice == 'camera' ? ImageSource.camera : ImageSource.gallery,
         imageQuality: 80,
@@ -178,33 +195,39 @@ class _ChatThreadScreenState extends State<ChatThreadScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final content = Column(
+      children: [
+        Expanded(
+          child: _loading
+              ? const Center(child: CircularProgressIndicator(color: AppColors.accent))
+              : _messages.isEmpty
+                  ? const Center(
+                      child: Text('첫 메시지를 보내보세요',
+                          style: TextStyle(color: AppColors.inkSoft)))
+                  : ListView.builder(
+                      controller: _scroll,
+                      padding: const EdgeInsets.fromLTRB(14, 14, 14, 14),
+                      itemCount: _messages.length,
+                      itemBuilder: (context, i) =>
+                          _Bubble(message: _messages[i], mine: _messages[i].userId == _me),
+                    ),
+        ),
+        _InputBar(
+            controller: _input,
+            sending: _sending,
+            onSend: _send,
+            onAttach: _attachSheet),
+      ],
+    );
+
+    if (widget.embedded) {
+      return Container(color: AppColors.cream, child: SafeArea(top: false, child: content));
+    }
+
     return Scaffold(
       backgroundColor: AppColors.cream,
       appBar: AppBar(title: Text(widget.title)),
-      body: Column(
-        children: [
-          Expanded(
-            child: _loading
-                ? const Center(child: CircularProgressIndicator(color: AppColors.accent))
-                : _messages.isEmpty
-                    ? const Center(
-                        child: Text('첫 메시지를 보내보세요',
-                            style: TextStyle(color: AppColors.inkSoft)))
-                    : ListView.builder(
-                        controller: _scroll,
-                        padding: const EdgeInsets.fromLTRB(14, 14, 14, 14),
-                        itemCount: _messages.length,
-                        itemBuilder: (context, i) =>
-                            _Bubble(message: _messages[i], mine: _messages[i].userId == _me),
-                      ),
-          ),
-          _InputBar(
-              controller: _input,
-              sending: _sending,
-              onSend: _send,
-              onAttach: _attachSheet),
-        ],
-      ),
+      body: content,
     );
   }
 }

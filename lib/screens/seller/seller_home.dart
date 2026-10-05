@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 
+import '../../data/chat_repository.dart';
 import '../../data/seller_repository.dart';
 import '../../models/fulfillment.dart';
 import '../../theme/app_colors.dart';
 import '../../widgets/dashboard_header.dart';
 import '../../widgets/new_product_banner.dart';
+import '../chat/chat_list_screen.dart';
 import 'bank_deposit_screen.dart';
 import 'categories_screen.dart';
 import 'delivery_work_screen.dart';
@@ -32,6 +34,7 @@ class SellerHome extends StatefulWidget {
   const SellerHome({
     super.key,
     required this.repository,
+    required this.chat,
     this.name = '',
     this.roleLabel = '',
     this.unread = 0,
@@ -44,6 +47,7 @@ class SellerHome extends StatefulWidget {
   });
 
   final SellerRepository repository;
+  final ChatRepository chat;
   final String name;
   final String roleLabel;
   final int unread;
@@ -95,7 +99,8 @@ class _SellerHomeState extends State<SellerHome> {
   }
 
   /// 업무 대분류 탭 정의 (역할에 따라 동적).
-  /// 본사 재고는 홈 «바로가기»로 이동해 탭 과다를 해소(7→6).
+  /// 본사 탭: 홈·공지사항·채팅·배송·정산 (출고·상품·거래처·재고는 홈 «바로가기»로).
+  /// 공급처 탭: 홈·채팅·출고·정산·상품.
   List<_TabDef> get _tabs => [
         _TabDef(
           icon: Icons.dashboard_outlined,
@@ -111,11 +116,18 @@ class _SellerHomeState extends State<SellerHome> {
             page: _noticeTab,
           ),
         _TabDef(
-          icon: Icons.local_shipping_outlined,
-          activeIcon: Icons.local_shipping,
-          label: '출고',
-          page: _shipTab,
+          icon: Icons.forum_outlined,
+          activeIcon: Icons.forum,
+          label: '채팅',
+          page: _chatTab,
         ),
+        if (!_isHq)
+          _TabDef(
+            icon: Icons.local_shipping_outlined,
+            activeIcon: Icons.local_shipping,
+            label: '출고',
+            page: _shipTab,
+          ),
         if (_isHq)
           _TabDef(
             icon: Icons.assignment_turned_in_outlined,
@@ -129,18 +141,12 @@ class _SellerHomeState extends State<SellerHome> {
           label: '정산',
           page: _settleTab,
         ),
-        _TabDef(
-          icon: Icons.category_outlined,
-          activeIcon: Icons.category,
-          label: '상품',
-          page: _productTab,
-        ),
-        if (_isHq)
+        if (!_isHq)
           _TabDef(
-            icon: Icons.store_outlined,
-            activeIcon: Icons.store,
-            label: '거래처',
-            page: _partnerTab,
+            icon: Icons.category_outlined,
+            activeIcon: Icons.category,
+            label: '상품',
+            page: _productTab,
           ),
       ];
 
@@ -310,6 +316,28 @@ class _SellerHomeState extends State<SellerHome> {
             onTap: () => _go(PurchaseOrdersScreen(
                 repository: widget.repository, isHq: _isHq, onChanged: widget.onChanged)),
           ),
+          if (_isHq)
+            _MenuTile(
+              icon: Icons.local_shipping_outlined,
+              title: '출고',
+              sub: '출고 대기·생성',
+              onTap: () => _go(ShipmentWaitingScreen(
+                  repository: widget.repository, onChanged: widget.onChanged)),
+            ),
+          if (_isHq)
+            _MenuTile(
+              icon: Icons.category_outlined,
+              title: '상품',
+              sub: '품목·카테고리·보관',
+              onTap: () => _pushTab('상품 관리', _productTab),
+            ),
+          if (_isHq)
+            _MenuTile(
+              icon: Icons.store_outlined,
+              title: '거래처',
+              sub: '공급처·매장·문의',
+              onTap: () => _pushTab('거래처 관리', _partnerTab),
+            ),
           if (widget.onAttendance != null)
             _MenuTile(
               icon: Icons.how_to_reg_outlined,
@@ -332,6 +360,26 @@ class _SellerHomeState extends State<SellerHome> {
 
   // ── 공지사항(본사) — 발송·이력 관리 ──
   Widget _noticeTab() => NoticesManageScreen(repository: widget.repository, embedded: true);
+
+  // ── 채팅 — 본사=매장/공급처 목록, 공급처=본사 대화 ──
+  Widget _chatTab() => ChatListScreen(
+        repository: widget.chat,
+        embedded: true,
+        onChanged: widget.onChanged,
+      );
+
+  // 메뉴 그룹(상품·거래처)을 바로가기에서 화면으로 열기
+  void _pushTab(String title, Widget Function() body) {
+    Navigator.of(context)
+        .push(MaterialPageRoute(
+          builder: (_) => Scaffold(
+            backgroundColor: AppColors.cream,
+            appBar: AppBar(title: Text(title)),
+            body: body(),
+          ),
+        ))
+        .then((_) => _reload());
+  }
 
   // ── 정산·전자문서 ──
   Widget _settleTab() => _tabBody([

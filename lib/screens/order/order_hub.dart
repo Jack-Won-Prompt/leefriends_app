@@ -147,6 +147,7 @@ class _OrderHubState extends State<OrderHub> {
                 storeName: user.storeName ?? '매장',
                 order: _repository,
                 ops: _ops,
+                chat: _chat,
                 cart: widget.cart,
                 unread: _unread,
                 onNotifications: _openNotifications,
@@ -157,6 +158,7 @@ class _OrderHubState extends State<OrderHub> {
               )
             : SellerHome(
                 repository: _seller,
+                chat: _chat,
                 name: user.name,
                 roleLabel: user.roleLabel,
                 unread: _unread,

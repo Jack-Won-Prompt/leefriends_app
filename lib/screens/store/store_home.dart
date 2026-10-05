@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
 
 import '../../data/cart_controller.dart';
+import '../../data/chat_repository.dart';
 import '../../data/order_repository.dart';
 import '../../data/store_ops_repository.dart';
 import '../../models/store_ops.dart' show StoreDashboard, won;
 import '../../theme/app_colors.dart';
 import '../../widgets/dashboard_header.dart';
 import '../../widgets/new_product_banner.dart';
+import '../chat/chat_thread_screen.dart';
 import '../order/catalog_screen.dart';
 import '../seller/fruit_storage_screen.dart';
 import '../order/orders_screen.dart';
@@ -24,6 +26,7 @@ class StoreHome extends StatefulWidget {
     required this.storeName,
     required this.order,
     required this.ops,
+    required this.chat,
     required this.cart,
     required this.unread,
     required this.onNotifications,
@@ -36,6 +39,7 @@ class StoreHome extends StatefulWidget {
   final String storeName;
   final OrderRepository order;
   final StoreOpsRepository ops;
+  final ChatRepository chat;
   final CartController cart;
   final int unread;
   final VoidCallback onNotifications;
@@ -116,6 +120,7 @@ class _StoreHomeState extends State<StoreHome> {
                 _orderTab(),
                 _inventoryTab(),
                 _noticeTab(),
+                _chatTab(),
               ],
             ),
           ),
@@ -158,6 +163,10 @@ class _StoreHomeState extends State<StoreHome> {
                   icon: Icon(Icons.campaign_outlined),
                   activeIcon: Icon(Icons.campaign),
                   label: '공지사항'),
+              BottomNavigationBarItem(
+                  icon: Icon(Icons.forum_outlined),
+                  activeIcon: Icon(Icons.forum),
+                  label: '채팅'),
             ],
           ),
         ),
@@ -262,6 +271,9 @@ class _StoreHomeState extends State<StoreHome> {
         fetchOne: widget.ops.portalNotice,
       );
 
+  // ── 채팅 (본사와 바로 대화) ──
+  Widget _chatTab() => _StoreChatTab(chat: widget.chat);
+
   // ── 발주 — 발주하기(CTA) + 발주/매입 내역 (발주 관련 단일 진입) ──
   Widget _orderTab() => _tabBody([
         _PrimaryCta(
@@ -326,6 +338,61 @@ class _StoreHomeState extends State<StoreHome> {
         ],
       );
 
+}
+
+/// 매장 채팅 탭 — 본사와의 단일 대화를 바로 연다(목록 없이).
+class _StoreChatTab extends StatefulWidget {
+  const _StoreChatTab({required this.chat});
+  final ChatRepository chat;
+
+  @override
+  State<_StoreChatTab> createState() => _StoreChatTabState();
+}
+
+class _StoreChatTabState extends State<_StoreChatTab> {
+  late Future<int?> _convId = _load();
+
+  Future<int?> _load() async {
+    final r = await widget.chat.conversations();
+    if (r.conversations.isEmpty) return null;
+    return r.conversations.first.id;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<int?>(
+      future: _convId,
+      builder: (context, snap) {
+        if (snap.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator(color: AppColors.accent));
+        }
+        final id = snap.data;
+        if (id == null) {
+          return Center(
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: Column(mainAxisSize: MainAxisSize.min, children: [
+                const Icon(Icons.forum_outlined, size: 40, color: AppColors.inkSoft),
+                const SizedBox(height: 10),
+                const Text('본사와의 대화를 불러오지 못했습니다',
+                    textAlign: TextAlign.center, style: TextStyle(color: AppColors.inkSoft)),
+                const SizedBox(height: 12),
+                OutlinedButton(
+                    onPressed: () => setState(() => _convId = _load()),
+                    child: const Text('다시 시도')),
+              ]),
+            ),
+          );
+        }
+        return ChatThreadScreen(
+          repository: widget.chat,
+          conversationId: id,
+          title: '본사',
+          embedded: true,
+        );
+      },
+    );
+  }
 }
 
 class _StoreStat extends StatelessWidget {

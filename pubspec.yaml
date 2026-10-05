@@ -2,7 +2,7 @@ name: leefriends
 description: "LEEFRIENDS · 프리미엄 망고빙수 전문점 모바일 앱"
 publish_to: 'none'
 
-version: 1.0.9+41
+version: 1.0.10+42
 
 environment:
   sdk: ^3.12.0
@@ -16,6 +16,7 @@ dependencies:
   http: ^1.2.2
   shared_preferences: ^2.3.2
   image_picker: ^1.1.2
+  file_picker: ^8.1.4
   url_launcher: ^6.3.1
   firebase_core: ^3.6.0
   firebase_messaging: ^15.1.3

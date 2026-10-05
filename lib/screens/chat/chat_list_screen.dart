@@ -11,9 +11,12 @@ import 'chat_thread_screen.dart';
 ///  - 매장/공급처: 본사와의 단일 대화방 목록(1행)
 ///  - 본사: 매장·공급처 전체 목록
 class ChatListScreen extends StatefulWidget {
-  const ChatListScreen({super.key, required this.repository, this.onChanged});
+  const ChatListScreen({super.key, required this.repository, this.onChanged, this.embedded = false});
   final ChatRepository repository;
   final VoidCallback? onChanged;
+
+  /// 셸 하단 탭에 삽입될 때 true — Scaffold/AppBar 없이 목록만.
+  final bool embedded;
 
   @override
   State<ChatListScreen> createState() => _ChatListScreenState();
@@ -80,10 +83,7 @@ class _ChatListScreenState extends State<ChatListScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.cream,
-      appBar: AppBar(title: const Text('메시지')),
-      body: RefreshIndicator(
+    final body = RefreshIndicator(
         color: AppColors.accent,
         onRefresh: _load,
         child: _loading
@@ -101,7 +101,14 @@ class _ChatListScreenState extends State<ChatListScreen> {
                     separatorBuilder: (_, _) => const SizedBox(height: 8),
                     itemBuilder: (context, i) => _Row(conv: _list[i], onTap: () => _open(_list[i])),
                   ),
-      ),
+      );
+
+    if (widget.embedded) return Container(color: AppColors.cream, child: body);
+
+    return Scaffold(
+      backgroundColor: AppColors.cream,
+      appBar: AppBar(title: const Text('메시지')),
+      body: body,
     );
   }
 }
