@@ -422,12 +422,14 @@ class SellerRepository {
       (await _post('/seller/stores/$id/reinvite', {}))['message'] as String? ?? '재발송했습니다.';
 
   // 공지 관리
-  Future<({List<PortalNoticeItem> notices, List<({String key, String label})> audiences})> portalNotices() async {
+  Future<({List<PortalNoticeItem> notices, List<({String key, String label})> audiences, List<({int id, String name})> stores})> portalNotices() async {
     final body = await _get('/seller/notices');
     final list = (body['data'] as List).map((e) => PortalNoticeItem.fromJson(e as Map<String, dynamic>)).toList();
     final aud = (body['meta']?['audiences'] as List? ?? [])
         .map((e) => (key: e['key'] as String, label: e['label'] as String)).toList();
-    return (notices: list, audiences: aud);
+    final stores = (body['meta']?['stores'] as List? ?? [])
+        .map((e) => (id: e['id'] as int, name: e['name'] as String)).toList();
+    return (notices: list, audiences: aud, stores: stores);
   }
 
   Future<String> createNotice(Map<String, dynamic> data) async =>

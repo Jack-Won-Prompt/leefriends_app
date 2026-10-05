@@ -8,27 +8,39 @@ import '../../widgets/paged_list_view.dart';
 /// 매장·공급처 — 본사 공지사항 목록. 웹 포털 «공지사항» 과 같은 내용(대상: 전체 + 내 역할).
 /// 조회 함수를 받아 매장(StoreOpsRepository)·공급처(SellerRepository) 어디서든 쓸 수 있다.
 class PortalNoticesScreen extends StatelessWidget {
-  const PortalNoticesScreen({super.key, required this.fetch, required this.fetchOne});
+  const PortalNoticesScreen({
+    super.key,
+    required this.fetch,
+    required this.fetchOne,
+    this.embedded = false,
+  });
 
   final Future<Paged<PortalNoticeItem>> Function(int page) fetch;
   final Future<PortalNoticeItem> Function(int id) fetchOne;
 
+  /// 셸 하단 탭에 삽입될 때 true — Scaffold/AppBar 없이 목록만 렌더.
+  final bool embedded;
+
   @override
   Widget build(BuildContext context) {
+    final body = PagedListView<PortalNoticeItem>(
+      emptyText: '공지사항이 없습니다',
+      emptyIcon: Icons.campaign_outlined,
+      fetch: fetch,
+      itemBuilder: (context, n) => _NoticeTile(
+        notice: n,
+        onTap: () => Navigator.of(context).push(MaterialPageRoute(
+          builder: (_) => PortalNoticeDetailScreen(id: n.id, fetchOne: fetchOne, initial: n),
+        )),
+      ),
+    );
+
+    if (embedded) return Container(color: AppColors.cream, child: body);
+
     return Scaffold(
       backgroundColor: AppColors.cream,
       appBar: AppBar(title: const Text('공지사항')),
-      body: PagedListView<PortalNoticeItem>(
-        emptyText: '공지사항이 없습니다',
-        emptyIcon: Icons.campaign_outlined,
-        fetch: fetch,
-        itemBuilder: (context, n) => _NoticeTile(
-          notice: n,
-          onTap: () => Navigator.of(context).push(MaterialPageRoute(
-            builder: (_) => PortalNoticeDetailScreen(id: n.id, fetchOne: fetchOne, initial: n),
-          )),
-        ),
-      ),
+      body: body,
     );
   }
 }

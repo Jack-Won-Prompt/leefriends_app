@@ -6,16 +6,20 @@ import '../../theme/app_colors.dart';
 
 /// 포털 공지 관리 — 본사 (발송/삭제). 발송 시 대상 전원에게 알림+FCM.
 class NoticesManageScreen extends StatefulWidget {
-  const NoticesManageScreen({super.key, required this.repository});
+  const NoticesManageScreen({super.key, required this.repository, this.embedded = false});
   final SellerRepository repository;
+
+  /// 셸 하단 탭에 삽입될 때 true — Scaffold/AppBar 없이 목록 + 발송 버튼만.
+  final bool embedded;
 
   @override
   State<NoticesManageScreen> createState() => _NoticesManageScreenState();
 }
 
 class _NoticesManageScreenState extends State<NoticesManageScreen> {
-  late Future<({List<PortalNoticeItem> notices, List<({String key, String label})> audiences})> _future;
+  late Future<({List<PortalNoticeItem> notices, List<({String key, String label})> audiences, List<({int id, String name})> stores})> _future;
   List<({String key, String label})> _audiences = const [];
+  List<({int id, String name})> _stores = const [];
 
   @override
   void initState() {
@@ -36,6 +40,7 @@ class _NoticesManageScreenState extends State<NoticesManageScreen> {
     final title = TextEditingController();
     final content = TextEditingController();
     String audience = 'all';
+    int? storeId; // 단일 매장 타겟(null = 전체 매장)
     bool pinned = false;
     final ok = await showDialog<bool>(
       context: context,
@@ -74,6 +79,24 @@ class _NoticesManageScreenState extends State<NoticesManageScreen> {
                     ),
                   ),
               ]),
+              // 매장 선택 — 대상이 '매장'일 때만. 비우면 전체 매장.
+              if (audience == 'store') ...[
+                const SizedBox(height: 10),
+                DropdownButtonFormField<int?>(
+                  initialValue: storeId,
+                  isExpanded: true,
+                  decoration: const InputDecoration(
+                    labelText: '매장 (비우면 전체 매장)',
+                    isDense: true,
+                  ),
+                  items: [
+                    const DropdownMenuItem<int?>(value: null, child: Text('전체 매장')),
+                    for (final s in _stores)
+                      DropdownMenuItem<int?>(value: s.id, child: Text(s.name)),
+                  ],
+                  onChanged: (v) => setLocal(() => storeId = v),
+                ),
+              ],
               SwitchListTile(
                 value: pinned,
                 onChanged: (v) => setLocal(() => pinned = v),
@@ -100,6 +123,7 @@ class _NoticesManageScreenState extends State<NoticesManageScreen> {
         'title': title.text.trim(),
         'content': content.text.trim(),
         'audience': audience,
+        if (audience == 'store' && storeId != null) 'store_id': storeId,
         'is_pinned': pinned,
       });
       _snack(msg);
@@ -145,7 +169,7 @@ class _NoticesManageScreenState extends State<NoticesManageScreen> {
                 padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
                 decoration: BoxDecoration(
                     color: AppColors.mango100, borderRadius: BorderRadius.circular(6)),
-                child: Text(n.audienceLabel,
+                child: Text(n.displayTarget,
                     style: const TextStyle(
                         fontSize: 11, fontWeight: FontWeight.w700, color: AppColors.mango800)),
               ),
@@ -199,21 +223,12 @@ class _NoticesManageScreenState extends State<NoticesManageScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.cream,
-      appBar: AppBar(title: const Text('공지 관리')),
-      floatingActionButton: FloatingActionButton.extended(
-        backgroundColor: AppColors.accent,
-        onPressed: _compose,
-        icon: const Icon(Icons.campaign_outlined),
-        label: const Text('공지 발송', style: TextStyle(fontWeight: FontWeight.w700)),
-      ),
-      body: FutureBuilder<({List<PortalNoticeItem> notices, List<({String key, String label})> audiences})>(
+    final body = FutureBuilder<({List<PortalNoticeItem> notices, List<({String key, String label})> audiences, List<({int id, String name})> stores})>(
         future: _future,
         builder: (context, snap) {
           if (snap.hasData && _audiences.isEmpty) {
             WidgetsBinding.instance.addPostFrameCallback((_) {
-              if (mounted) setState(() => _audiences = snap.data!.audiences);
+              if (mounted) setState(() { _audiences = snap.data!.audiences; _stores = snap.data!.stores; });
             });
           }
           if (snap.connectionState == ConnectionState.waiting) {
@@ -249,7 +264,7 @@ class _NoticesManageScreenState extends State<NoticesManageScreen> {
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
                         decoration: BoxDecoration(color: AppColors.mango100, borderRadius: BorderRadius.circular(6)),
-                        child: Text(n.audienceLabel, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: AppColors.mango800)),
+                        child: Text(n.displayTarget, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: AppColors.mango800)),
                       ),
                       if ((n.author ?? '').isNotEmpty) ...[
                         const SizedBox(width: 6),
@@ -278,7 +293,27 @@ class _NoticesManageScreenState extends State<NoticesManageScreen> {
             },
           );
         },
-      ),
+      );
+
+    final composeBtn = FloatingActionButton.extended(
+      backgroundColor: AppColors.accent,
+      onPressed: _compose,
+      icon: const Icon(Icons.campaign_outlined),
+      label: const Text('공지 발송', style: TextStyle(fontWeight: FontWeight.w700)),
+    );
+
+    if (widget.embedded) {
+      return Stack(children: [
+        Positioned.fill(child: body),
+        Positioned(right: 16, bottom: 16 + MediaQuery.of(context).padding.bottom, child: composeBtn),
+      ]);
+    }
+
+    return Scaffold(
+      backgroundColor: AppColors.cream,
+      appBar: AppBar(title: const Text('공지 관리')),
+      floatingActionButton: composeBtn,
+      body: body,
     );
   }
 }

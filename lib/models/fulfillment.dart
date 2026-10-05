@@ -551,6 +551,7 @@ class PortalNoticeItem {
   final String? content;
   final String audience;
   final String audienceLabel;
+  final String? targetLabel; // 단일 매장 타겟 표기(예: "매장 · 망고정 월계점"); 없으면 audienceLabel
   final bool isPinned;
   final String? author;
   final String? createdAt;
@@ -560,16 +561,22 @@ class PortalNoticeItem {
     required this.content,
     required this.audience,
     required this.audienceLabel,
+    this.targetLabel,
     required this.isPinned,
     required this.author,
     required this.createdAt,
   });
+
+  /// 목록 표시용 — 단일 매장 타겟이면 매장명, 아니면 대상 라벨
+  String get displayTarget => (targetLabel != null && targetLabel!.isNotEmpty) ? targetLabel! : audienceLabel;
+
   factory PortalNoticeItem.fromJson(Map<String, dynamic> j) => PortalNoticeItem(
         id: j['id'] as int,
         title: j['title'] as String? ?? '',
         content: j['content'] as String?,
         audience: j['audience'] as String? ?? 'all',
         audienceLabel: j['audience_label'] as String? ?? '',
+        targetLabel: j['target_label'] as String?,
         isPinned: j['is_pinned'] as bool? ?? false,
         author: j['author'] as String?,
         createdAt: j['created_at'] as String?,

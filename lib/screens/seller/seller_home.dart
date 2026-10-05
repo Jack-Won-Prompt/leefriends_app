@@ -103,6 +103,13 @@ class _SellerHomeState extends State<SellerHome> {
           label: '홈',
           page: _homeTab,
         ),
+        if (_isHq)
+          _TabDef(
+            icon: Icons.campaign_outlined,
+            activeIcon: Icons.campaign,
+            label: '공지사항',
+            page: _noticeTab,
+          ),
         _TabDef(
           icon: Icons.local_shipping_outlined,
           activeIcon: Icons.local_shipping,
@@ -323,6 +330,9 @@ class _SellerHomeState extends State<SellerHome> {
   // ── 배송업무(본사) — 출고지시서 QR 스캔 → 사진·서명 → 배송완료 ──
   Widget _deliveryTab() => DeliveryWorkScreen(repository: widget.repository, embedded: true);
 
+  // ── 공지사항(본사) — 발송·이력 관리 ──
+  Widget _noticeTab() => NoticesManageScreen(repository: widget.repository, embedded: true);
+
   // ── 정산·전자문서 ──
   Widget _settleTab() => _tabBody([
         _NavCard(
@@ -405,12 +415,6 @@ class _SellerHomeState extends State<SellerHome> {
           title: '매장 관리',
           sub: '매장 초대·수정',
           onTap: () => _go(StoresManageScreen(repository: widget.repository)),
-        ),
-        _NavCard(
-          icon: Icons.campaign_outlined,
-          title: '공지 관리',
-          sub: '포털 공지 발송',
-          onTap: () => _go(NoticesManageScreen(repository: widget.repository)),
         ),
         _NavCard(
           icon: Icons.notifications_active_outlined,

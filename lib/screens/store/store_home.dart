@@ -115,6 +115,7 @@ class _StoreHomeState extends State<StoreHome> {
                 _homeTab(),
                 _orderTab(),
                 _inventoryTab(),
+                _noticeTab(),
               ],
             ),
           ),
@@ -153,6 +154,10 @@ class _StoreHomeState extends State<StoreHome> {
                   icon: Icon(Icons.inventory_2_outlined),
                   activeIcon: Icon(Icons.inventory_2),
                   label: '재고'),
+              BottomNavigationBarItem(
+                  icon: Icon(Icons.campaign_outlined),
+                  activeIcon: Icon(Icons.campaign),
+                  label: '공지사항'),
             ],
           ),
         ),
@@ -240,17 +245,6 @@ class _StoreHomeState extends State<StoreHome> {
             onTap: () => _push(
                 context, FruitStorageScreen.readonly(repository: widget.ops)),
           ),
-          _FeatureCard(
-            icon: Icons.campaign_outlined,
-            title: '공지사항',
-            sub: '본사 공지',
-            onTap: () => _push(
-                context,
-                PortalNoticesScreen(
-                  fetch: (page) => widget.ops.portalNotices(page: page),
-                  fetchOne: widget.ops.portalNotice,
-                )),
-          ),
           if (widget.onAttendance != null)
             _FeatureCard(
               icon: Icons.how_to_reg_outlined,
@@ -260,6 +254,13 @@ class _StoreHomeState extends State<StoreHome> {
             ),
         ]),
       ]);
+
+  // ── 공지사항 (본사 공지 열람) ──
+  Widget _noticeTab() => PortalNoticesScreen(
+        embedded: true,
+        fetch: (page) => widget.ops.portalNotices(page: page),
+        fetchOne: widget.ops.portalNotice,
+      );
 
   // ── 발주 — 발주하기(CTA) + 발주/매입 내역 (발주 관련 단일 진입) ──
   Widget _orderTab() => _tabBody([
