@@ -1,6 +1,6 @@
 import 'dart:async';
 
-import 'package:file_picker/file_picker.dart';
+import 'package:file_selector/file_selector.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -163,9 +163,8 @@ class _ChatThreadScreenState extends State<ChatThreadScreen> {
     if (choice == null) return;
     try {
       if (choice == 'file') {
-        final res = await FilePicker.platform.pickFiles(withData: false);
-        final path = res?.files.single.path;
-        if (path != null) await _sendFile(path);
+        final XFile? f = await openFile();
+        if (f != null) await _sendFile(f.path);
         return;
       }
       final x = await ImagePicker().pickImage(
