@@ -97,25 +97,25 @@ class AppTheme {
   }
 
   static TextTheme _textTheme(TextTheme base) {
-    return base
-        .apply(
-          fontFamily: _font,
-          bodyColor: AppColors.ink,
-          displayColor: AppColors.ink,
-        )
-        .copyWith(
-          displaySmall: const TextStyle(fontWeight: FontWeight.w800, height: 1.15),
-          headlineMedium:
-              const TextStyle(fontWeight: FontWeight.w800, height: 1.2),
-          headlineSmall:
-              const TextStyle(fontWeight: FontWeight.w700, height: 1.25),
-          titleLarge:
-              const TextStyle(fontWeight: FontWeight.w700, height: 1.3),
-          titleMedium:
-              const TextStyle(fontWeight: FontWeight.w600),
-          bodyLarge: const TextStyle(height: 1.5, color: AppColors.ink),
-          bodyMedium: const TextStyle(height: 1.5, color: AppColors.inkSoft),
-          labelLarge: const TextStyle(fontWeight: FontWeight.w700),
-        );
+    // 1) 폰트(Pretendard)와 기본 글자색(ink)을 모든 스타일에 적용.
+    //    주의: apply(bodyColor/displayColor)는 body*·display* 에만 색을 넣는다.
+    final applied = base.apply(
+      fontFamily: _font,
+      bodyColor: AppColors.ink,
+      displayColor: AppColors.ink,
+    );
+    // 2) 가중치/행간만 덮어쓴다 — 반드시 applied 스타일에서 copyWith 해서
+    //    fontFamily·color 가 유실되지 않도록 한다(흰색/깨짐 방지).
+    //    title*/headline*/label* 은 apply 로 색이 안 들어가므로 ink 를 명시.
+    return applied.copyWith(
+      displaySmall: applied.displaySmall?.copyWith(fontWeight: FontWeight.w800, height: 1.15),
+      headlineMedium: applied.headlineMedium?.copyWith(fontWeight: FontWeight.w800, height: 1.2, color: AppColors.ink),
+      headlineSmall: applied.headlineSmall?.copyWith(fontWeight: FontWeight.w700, height: 1.25, color: AppColors.ink),
+      titleLarge: applied.titleLarge?.copyWith(fontWeight: FontWeight.w700, height: 1.3, color: AppColors.ink),
+      titleMedium: applied.titleMedium?.copyWith(fontWeight: FontWeight.w600, color: AppColors.ink),
+      bodyLarge: applied.bodyLarge?.copyWith(height: 1.5, color: AppColors.ink),
+      bodyMedium: applied.bodyMedium?.copyWith(height: 1.5, color: AppColors.inkSoft),
+      labelLarge: applied.labelLarge?.copyWith(fontWeight: FontWeight.w700, color: AppColors.ink),
+    );
   }
 }
