@@ -522,6 +522,7 @@ class StoreItem {
   final String? phone;
   final String? address;
   final bool isActive;
+  final bool orderBlocked;
   final bool joined;
   const StoreItem({
     required this.id,
@@ -531,6 +532,7 @@ class StoreItem {
     required this.phone,
     required this.address,
     required this.isActive,
+    required this.orderBlocked,
     required this.joined,
   });
   factory StoreItem.fromJson(Map<String, dynamic> j) => StoreItem(
@@ -541,6 +543,7 @@ class StoreItem {
         phone: j['phone'] as String?,
         address: j['address'] as String?,
         isActive: j['is_active'] as bool? ?? true,
+        orderBlocked: j['order_blocked'] as bool? ?? false,
         joined: j['joined'] as bool? ?? false,
       );
 }

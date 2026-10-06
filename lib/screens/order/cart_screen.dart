@@ -73,11 +73,17 @@ class _CartScreenState extends State<CartScreen> {
     } catch (e) {
       if (!mounted) return;
       setState(() => _submitting = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(e.toString()),
-          behavior: SnackBarBehavior.floating,
-          backgroundColor: const Color(0xFFB02A2A),
+      // 주문 불가(미정산) 등 발주 실패는 팝업으로 안내
+      final msg = e.toString().replaceFirst('OrderException: ', '');
+      await showDialog<void>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          icon: const Text('🚫', style: TextStyle(fontSize: 28)),
+          title: const Text('발주 등록 불가', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w800)),
+          content: Text(msg, style: const TextStyle(fontSize: 14, height: 1.5)),
+          actions: [
+            FilledButton(onPressed: () => Navigator.pop(ctx), child: const Text('확인')),
+          ],
         ),
       );
     }

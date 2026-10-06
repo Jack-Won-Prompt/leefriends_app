@@ -37,23 +37,35 @@ class _StoresManageScreenState extends State<StoresManageScreen> {
     final region = TextEditingController(text: s?.region ?? '');
     final phone = TextEditingController(text: s?.phone ?? '');
     final address = TextEditingController(text: s?.address ?? '');
+    bool orderBlocked = s?.orderBlocked ?? false;
     final ok = await showDialog<bool>(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text(s == null ? '매장 초대' : '매장 수정'),
-        content: SingleChildScrollView(
-          child: Column(mainAxisSize: MainAxisSize.min, children: [
-            _f(name, '매장명'),
-            _f(email, s == null ? '이메일' : '이메일 (세금계산서·거래명세서 수신)'),
-            _f(region, '지역 (선택)'),
-            _f(phone, '연락처 (선택)'),
-            _f(address, '주소 (선택)'),
-          ]),
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setLocal) => AlertDialog(
+          title: Text(s == null ? '매장 초대' : '매장 수정'),
+          content: SingleChildScrollView(
+            child: Column(mainAxisSize: MainAxisSize.min, children: [
+              _f(name, '매장명'),
+              _f(email, s == null ? '이메일' : '이메일 (세금계산서·거래명세서 수신)'),
+              _f(region, '지역 (선택)'),
+              _f(phone, '연락처 (선택)'),
+              _f(address, '주소 (선택)'),
+              if (s != null)
+                SwitchListTile(
+                  value: orderBlocked,
+                  onChanged: (v) => setLocal(() => orderBlocked = v),
+                  activeThumbColor: const Color(0xFFB02A2A),
+                  contentPadding: EdgeInsets.zero,
+                  title: const Text('🚫 주문 불가', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700)),
+                  subtitle: const Text('미정산 등으로 발주 등록 차단', style: TextStyle(fontSize: 12)),
+                ),
+            ]),
+          ),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('취소')),
+            FilledButton(onPressed: () => Navigator.pop(ctx, true), child: Text(s == null ? '초대' : '저장')),
+          ],
         ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('취소')),
-          FilledButton(onPressed: () => Navigator.pop(ctx, true), child: Text(s == null ? '초대' : '저장')),
-        ],
       ),
     );
     if (ok != true) return;
@@ -64,6 +76,7 @@ class _StoresManageScreenState extends State<StoresManageScreen> {
         'region': region.text.trim(),
         'phone': phone.text.trim(),
         'address': address.text.trim(),
+        if (s != null) 'order_blocked': orderBlocked,
       };
       final msg = s == null
           ? await widget.repository.inviteStore(data)
@@ -130,6 +143,14 @@ class _StoresManageScreenState extends State<StoresManageScreen> {
                         const SizedBox(width: 8),
                       ],
                       Expanded(child: Text(s.name, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w800))),
+                      if (s.orderBlocked) ...[
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                          decoration: BoxDecoration(color: const Color(0xFFFCE8E8), borderRadius: BorderRadius.circular(6)),
+                          child: const Text('🚫 주문불가', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: Color(0xFFB02A2A))),
+                        ),
+                        const SizedBox(width: 6),
+                      ],
                       _Badge(joined: s.joined),
                     ]),
                     const SizedBox(height: 4),
