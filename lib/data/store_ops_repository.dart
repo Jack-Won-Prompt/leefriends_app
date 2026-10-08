@@ -4,6 +4,7 @@ import 'package:http/http.dart' as http;
 
 import '../models/fulfillment.dart' show PortalNoticeItem;
 import '../models/paged.dart';
+import '../models/recipe.dart';
 import '../models/store_ops.dart';
 import 'api_config.dart';
 import 'auth_controller.dart';
@@ -151,6 +152,22 @@ class StoreOpsRepository {
   Future<PortalNoticeItem> portalNotice(int id) async {
     final body = await _get('/portal-notices/$id');
     return PortalNoticeItem.fromJson(body['data'] as Map<String, dynamic>);
+  }
+
+  // ---- 본사 레시피 (매장·공급처 열람) ----
+  Future<Paged<RecipeItem>> recipes({int page = 1}) async {
+    final body = await _get('/recipes?page=$page');
+    return Paged(
+      items: (body['data'] as List)
+          .map((e) => RecipeItem.fromJson(e as Map<String, dynamic>))
+          .toList(),
+      hasMore: Paged.hasMoreFromMeta(body['meta'] as Map<String, dynamic>?),
+    );
+  }
+
+  Future<RecipeItem> recipe(int id) async {
+    final body = await _get('/recipes/$id');
+    return RecipeItem.fromJson(body['data'] as Map<String, dynamic>);
   }
 
   // ---- helpers ----

@@ -20,6 +20,7 @@ import 'inquiries_screen.dart';
 import 'notices_manage_screen.dart';
 import 'notification_logs_screen.dart';
 import 'products_screen.dart';
+import 'recipes_manage_screen.dart';
 import 'sales_screen.dart';
 import 'seller_orders_screen.dart';
 import 'stores_screen.dart';
@@ -114,6 +115,13 @@ class _SellerHomeState extends State<SellerHome> {
             activeIcon: Icons.campaign,
             label: '공지사항',
             page: _noticeTab,
+          ),
+        if (_isHq)
+          _TabDef(
+            icon: Icons.menu_book_outlined,
+            activeIcon: Icons.menu_book,
+            label: '레시피',
+            page: _recipeTab,
           ),
         _TabDef(
           icon: Icons.forum_outlined,
@@ -360,6 +368,8 @@ class _SellerHomeState extends State<SellerHome> {
 
   // ── 공지사항(본사) — 발송·이력 관리 ──
   Widget _noticeTab() => NoticesManageScreen(repository: widget.repository, embedded: true);
+
+  Widget _recipeTab() => RecipesManageScreen(repository: widget.repository, embedded: true);
 
   // ── 채팅 — 본사=매장/공급처 목록, 공급처=본사 대화 ──
   Widget _chatTab() => ChatListScreen(

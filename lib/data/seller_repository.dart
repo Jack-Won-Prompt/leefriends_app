@@ -9,6 +9,7 @@ import '../models/hometax.dart';
 import '../models/hq_inventory.dart';
 import '../models/notification_log.dart';
 import '../models/paged.dart';
+import '../models/recipe.dart';
 import '../models/store_payment.dart';
 import '../models/store_ops.dart' show FruitStorageItem;
 import '../models/purchase_order.dart';
@@ -436,6 +437,46 @@ class SellerRepository {
       (await _post('/seller/notices', data, expect: 201))['message'] as String? ?? '발송했습니다.';
   Future<String> deleteNotice(int id) async =>
       (await _delete('/seller/notices/$id'))['message'] as String? ?? '삭제되었습니다.';
+
+  // 레시피 관리 (본사)
+  Future<({List<RecipeItem> recipes, List<({int id, String name})> products})> recipesManage() async {
+    final body = await _get('/seller/recipes');
+    final list = (body['data'] as List)
+        .map((e) => RecipeItem.fromJson(e as Map<String, dynamic>))
+        .toList();
+    final products = (body['meta']?['products'] as List? ?? [])
+        .map((e) => (id: e['id'] as int, name: e['name'] as String))
+        .toList();
+    return (recipes: list, products: products);
+  }
+
+  /// 레시피 등록 (본사). 이미지는 선택. 멀티파트 업로드. 성공 메시지 반환.
+  Future<String> createRecipe({
+    int? supplyProductId,
+    required String title,
+    String? content,
+    String? imagePath,
+  }) async {
+    final req = http.MultipartRequest(
+        'POST', Uri.parse('${ApiConfig.apiUrl}/seller/recipes'));
+    req.headers.addAll(auth.authHeaders); // Accept + Authorization
+    req.fields['title'] = title;
+    if (supplyProductId != null) req.fields['supply_product_id'] = '$supplyProductId';
+    if (content != null && content.trim().isNotEmpty) req.fields['content'] = content.trim();
+    if (imagePath != null) {
+      req.files.add(await http.MultipartFile.fromPath('image', imagePath));
+    }
+    final streamed = await _client.send(req).timeout(const Duration(seconds: 60));
+    final res = await http.Response.fromStream(streamed);
+    final data = _decode(res);
+    if (res.statusCode == 201 || res.statusCode == 200) {
+      return data['message'] as String? ?? '레시피를 등록했습니다.';
+    }
+    throw OrderException(_error(data, res.statusCode));
+  }
+
+  Future<String> deleteRecipe(int id) async =>
+      (await _delete('/seller/recipes/$id'))['message'] as String? ?? '삭제되었습니다.';
 
   // 가맹문의
   Future<({List<InquiryItem> inquiries, int newCount})> inquiries({String status = 'all'}) async {

@@ -16,6 +16,7 @@ import 'inbound_screen.dart';
 import 'inventory_screen.dart';
 import 'portal_notices_screen.dart';
 import 'purchases_screen.dart';
+import 'recipes_screen.dart';
 import 'tax_invoices_screen.dart';
 
 /// 매장 로그인 후 홈 — 업무 대분류 하단 네비게이션 셸.
@@ -121,6 +122,7 @@ class _StoreHomeState extends State<StoreHome> {
                 _inventoryTab(),
                 _noticeTab(),
                 _chatTab(),
+                _recipeTab(),
               ],
             ),
           ),
@@ -167,6 +169,10 @@ class _StoreHomeState extends State<StoreHome> {
                   icon: Icon(Icons.forum_outlined),
                   activeIcon: Icon(Icons.forum),
                   label: '채팅'),
+              BottomNavigationBarItem(
+                  icon: Icon(Icons.menu_book_outlined),
+                  activeIcon: Icon(Icons.menu_book),
+                  label: '레시피'),
             ],
           ),
         ),
@@ -273,6 +279,12 @@ class _StoreHomeState extends State<StoreHome> {
 
   // ── 채팅 (본사와 바로 대화) ──
   Widget _chatTab() => _StoreChatTab(chat: widget.chat);
+
+  // ── 레시피 (본사 레시피 열람, 상세는 팝업) ──
+  Widget _recipeTab() => RecipesScreen(
+        embedded: true,
+        fetch: (page) => widget.ops.recipes(page: page),
+      );
 
   // ── 발주 — 발주하기(CTA) + 발주/매입 내역 (발주 관련 단일 진입) ──
   Widget _orderTab() => _tabBody([
