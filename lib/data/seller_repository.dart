@@ -450,12 +450,15 @@ class SellerRepository {
     return (recipes: list, products: products);
   }
 
-  /// 레시피 등록 (본사). 이미지는 선택. 멀티파트 업로드. 성공 메시지 반환.
+  /// 레시피 등록 (본사). 이미지·영상은 선택. 멀티파트 업로드. 성공 메시지 반환.
+  /// 영상: videoPath(업로드 파일) 또는 videoLink(외부 링크) 중 하나.
   Future<String> createRecipe({
     int? supplyProductId,
     required String title,
     String? content,
     String? imagePath,
+    String? videoPath,
+    String? videoLink,
   }) async {
     final req = http.MultipartRequest(
         'POST', Uri.parse('${ApiConfig.apiUrl}/seller/recipes'));
@@ -463,10 +466,15 @@ class SellerRepository {
     req.fields['title'] = title;
     if (supplyProductId != null) req.fields['supply_product_id'] = '$supplyProductId';
     if (content != null && content.trim().isNotEmpty) req.fields['content'] = content.trim();
+    if (videoLink != null && videoLink.trim().isNotEmpty) req.fields['video_link'] = videoLink.trim();
     if (imagePath != null) {
       req.files.add(await http.MultipartFile.fromPath('image', imagePath));
     }
-    final streamed = await _client.send(req).timeout(const Duration(seconds: 60));
+    if (videoPath != null) {
+      req.files.add(await http.MultipartFile.fromPath('video', videoPath));
+    }
+    // 영상 업로드가 있을 수 있어 타임아웃을 넉넉히 둔다.
+    final streamed = await _client.send(req).timeout(const Duration(seconds: 180));
     final res = await http.Response.fromStream(streamed);
     final data = _decode(res);
     if (res.statusCode == 201 || res.statusCode == 200) {

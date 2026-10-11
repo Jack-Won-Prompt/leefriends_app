@@ -43,8 +43,10 @@ class _RecipesManageScreenState extends State<RecipesManageScreen> {
   Future<void> _compose() async {
     final title = TextEditingController();
     final content = TextEditingController();
+    final videoLink = TextEditingController();
     int? productId;
     XFile? image;
+    XFile? video;
 
     final ok = await showDialog<bool>(
       context: context,
@@ -106,6 +108,53 @@ class _RecipesManageScreenState extends State<RecipesManageScreen> {
                       height: 120, width: double.infinity, fit: BoxFit.cover),
                 ),
               ],
+              const SizedBox(height: 12),
+              // 영상 업로드(선택) — 갤러리에서 동영상 선택
+              Align(
+                alignment: Alignment.centerLeft,
+                child: OutlinedButton.icon(
+                  onPressed: () async {
+                    final x = await _pickVideo();
+                    if (x != null) setLocal(() => video = x);
+                  },
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: AppColors.accent,
+                    side: const BorderSide(color: AppColors.mango300),
+                  ),
+                  icon: const Icon(Icons.videocam_outlined, size: 18),
+                  label: Text(video == null ? '영상 업로드' : '영상 변경'),
+                ),
+              ),
+              if (video != null) ...[
+                const SizedBox(height: 6),
+                Row(children: [
+                  const Icon(Icons.movie_outlined, size: 16, color: AppColors.inkSoft),
+                  const SizedBox(width: 6),
+                  Expanded(
+                    child: Text(video!.name,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(fontSize: 12, color: AppColors.inkSoft)),
+                  ),
+                  IconButton(
+                    onPressed: () => setLocal(() => video = null),
+                    icon: const Icon(Icons.close, size: 16, color: AppColors.inkSoft),
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(),
+                  ),
+                ]),
+              ],
+              const SizedBox(height: 8),
+              // 외부 영상 링크(선택) — 큰 영상은 업로드 대신 링크 권장
+              TextField(
+                controller: videoLink,
+                keyboardType: TextInputType.url,
+                decoration: const InputDecoration(
+                  labelText: '영상 링크 (유튜브 등, 선택)',
+                  isDense: true,
+                  hintText: 'https://youtu.be/...',
+                ),
+              ),
             ]),
           ),
           actions: [
@@ -126,6 +175,8 @@ class _RecipesManageScreenState extends State<RecipesManageScreen> {
         title: title.text.trim(),
         content: content.text,
         imagePath: image?.path,
+        videoPath: video?.path,
+        videoLink: videoLink.text,
       );
       _snack(msg);
       _reload();
@@ -157,6 +208,31 @@ class _RecipesManageScreenState extends State<RecipesManageScreen> {
       source: choice == 'camera' ? ImageSource.camera : ImageSource.gallery,
       imageQuality: 75,
       maxWidth: 1600,
+    );
+  }
+
+  Future<XFile?> _pickVideo() async {
+    final choice = await showModalBottomSheet<String>(
+      context: context,
+      builder: (ctx) => SafeArea(
+        child: Column(mainAxisSize: MainAxisSize.min, children: [
+          ListTile(
+            leading: const Icon(Icons.videocam_outlined),
+            title: const Text('카메라로 촬영'),
+            onTap: () => Navigator.pop(ctx, 'camera'),
+          ),
+          ListTile(
+            leading: const Icon(Icons.video_library_outlined),
+            title: const Text('갤러리에서 선택'),
+            onTap: () => Navigator.pop(ctx, 'gallery'),
+          ),
+        ]),
+      ),
+    );
+    if (choice == null) return null;
+    return ImagePicker().pickVideo(
+      source: choice == 'camera' ? ImageSource.camera : ImageSource.gallery,
+      maxDuration: const Duration(minutes: 5),
     );
   }
 
