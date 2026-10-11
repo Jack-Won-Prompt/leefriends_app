@@ -55,16 +55,65 @@ class _RecipesManageScreenState extends State<RecipesManageScreen> {
           title: const Text('레시피 작성'),
           content: SingleChildScrollView(
             child: Column(mainAxisSize: MainAxisSize.min, children: [
-              DropdownButtonFormField<int?>(
-                initialValue: productId,
-                isExpanded: true,
-                decoration: const InputDecoration(labelText: '물품 (선택)', isDense: true),
-                items: [
-                  const DropdownMenuItem<int?>(value: null, child: Text('물품 없음 (일반 레시피)')),
-                  for (final p in _products)
-                    DropdownMenuItem<int?>(value: p.id, child: Text(p.name)),
-                ],
-                onChanged: (v) => setLocal(() => productId = v),
+              // 물품 선택 — 이름으로 검색하는 자동완성 (선택)
+              Autocomplete<({int id, String name})>(
+                optionsBuilder: (TextEditingValue tev) {
+                  final q = tev.text.trim().toLowerCase();
+                  if (q.isEmpty) return _products;
+                  return _products.where((p) => p.name.toLowerCase().contains(q));
+                },
+                displayStringForOption: (p) => p.name,
+                onSelected: (p) => setLocal(() => productId = p.id),
+                fieldViewBuilder: (context, controller, focusNode, onFieldSubmitted) {
+                  return TextField(
+                    controller: controller,
+                    focusNode: focusNode,
+                    decoration: InputDecoration(
+                      labelText: '물품 (선택 · 이름으로 검색)',
+                      isDense: true,
+                      hintText: '물품 없음 (일반 레시피)',
+                      suffixIcon: productId != null
+                          ? IconButton(
+                              icon: const Icon(Icons.close, size: 18),
+                              onPressed: () {
+                                controller.clear();
+                                setLocal(() => productId = null);
+                              },
+                            )
+                          : null,
+                    ),
+                    onChanged: (v) {
+                      if (v.isEmpty && productId != null) setLocal(() => productId = null);
+                    },
+                  );
+                },
+                optionsViewBuilder: (context, onSelected, options) {
+                  return Align(
+                    alignment: Alignment.topLeft,
+                    child: Material(
+                      elevation: 4,
+                      borderRadius: BorderRadius.circular(10),
+                      child: ConstrainedBox(
+                        constraints: const BoxConstraints(maxHeight: 240, maxWidth: 360),
+                        child: ListView.builder(
+                          padding: EdgeInsets.zero,
+                          shrinkWrap: true,
+                          itemCount: options.length,
+                          itemBuilder: (context, i) {
+                            final p = options.elementAt(i);
+                            return InkWell(
+                              onTap: () => onSelected(p),
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
+                                child: Text(p.name, style: const TextStyle(fontSize: 14)),
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+                    ),
+                  );
+                },
               ),
               const SizedBox(height: 8),
               TextField(
