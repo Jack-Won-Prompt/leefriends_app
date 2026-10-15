@@ -8,6 +8,7 @@ import '../models/store_ops.dart' show OrderStatement;
 import '../models/supply_product.dart';
 import 'api_config.dart';
 import 'auth_controller.dart';
+import '../models/order_payment.dart';
 
 /// 발주 도메인 API 클라이언트. 인증 헤더는 [AuthController] 에서 가져옵니다.
 class OrderRepository {
@@ -46,7 +47,10 @@ class OrderRepository {
   }
 
   /// 발주 접수. items: [{product_id, unit_id?, qty}]. orderType: normal|sample
-  Future<OrderModel> createOrder({
+  ///
+  /// 결제 매장(토스)이면 발주가 바로 생성되지 않고 결제 정보가 돌아온다.
+  /// 결제를 마쳐야 본사에 접수되므로, 호출한 쪽에서 결제창을 띄우고 결과를 확인해야 한다.
+  Future<OrderSubmitResult> createOrder({
     required List<Map<String, dynamic>> items,
     String? note,
     String orderType = 'normal',
@@ -60,9 +64,20 @@ class OrderRepository {
         .timeout(ApiConfig.timeout);
     final body = _decodeMap(res);
     if (res.statusCode == 201) {
-      return OrderModel.fromJson(body['data'] as Map<String, dynamic>);
+      return OrderSubmitResult(
+          order: OrderModel.fromJson(body['data'] as Map<String, dynamic>));
+    }
+    if (res.statusCode == 200) {
+      final pay = PaymentCheckout.fromJson(body['payment'] as Map<String, dynamic>?);
+      if (pay != null) return OrderSubmitResult(payment: pay);
     }
     throw OrderException(_error(body, res.statusCode));
+  }
+
+  /// 결제 결과 확인 — 결제창이 닫힌 뒤 서버에 다시 물어본다.
+  Future<CheckoutStatus> checkoutStatus(String checkoutId) async {
+    final body = await _get('/orders/checkout/$checkoutId');
+    return CheckoutStatus.fromJson(body['data'] as Map<String, dynamic>);
   }
 
   /// 발주 수정 (출고 전). items: [{product_id, unit_id?, qty}]
@@ -162,4 +177,11 @@ class OrderException implements Exception {
   OrderException(this.message);
   @override
   String toString() => message;
+}
+
+/// 발주 전송 결과 — 바로 접수됐거나([order]), 결제가 필요하거나([payment]).
+class OrderSubmitResult {
+  const OrderSubmitResult({this.order, this.payment});
+  final OrderModel? order;
+  final PaymentCheckout? payment;
 }

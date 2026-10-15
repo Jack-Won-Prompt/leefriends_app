@@ -4,7 +4,10 @@ import '../../data/cart_controller.dart';
 import '../../data/order_repository.dart';
 import '../../theme/app_colors.dart';
 import '../../widgets/product_thumb.dart';
+import '../../models/order.dart';
+import '../../models/order_payment.dart';
 import 'order_detail_screen.dart';
+import 'payment_webview_screen.dart';
 
 /// 장바구니 확인 + 발주 접수/수정.
 class CartScreen extends StatefulWidget {
@@ -45,31 +48,29 @@ class _CartScreenState extends State<CartScreen> {
     setState(() => _submitting = true);
     try {
       final note = _note.text.trim().isEmpty ? null : _note.text.trim();
-      final order = widget.isEdit
-          ? await widget.repository.updateOrder(
-              id: widget.editOrderId!,
-              items: widget.cart.toItems(),
-              note: note,
-            )
-          : await widget.repository.createOrder(
-              items: widget.cart.toItems(),
-              note: note,
-              orderType: _sample ? 'sample' : 'normal',
-            );
-      widget.cart.clear();
-      if (!mounted) return;
-      // 발주 상세로 교체 진입
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(
-          builder: (_) => OrderDetailScreen(
-            repository: widget.repository,
-            orderId: order.id,
-            initial: order,
-            justCreated: !widget.isEdit,
-            justUpdated: widget.isEdit,
-          ),
-        ),
+
+      if (widget.isEdit) {
+        final order = await widget.repository.updateOrder(
+          id: widget.editOrderId!,
+          items: widget.cart.toItems(),
+          note: note,
+        );
+        _goToOrder(order.id, order: order, updated: true);
+        return;
+      }
+
+      final result = await widget.repository.createOrder(
+        items: widget.cart.toItems(),
+        note: note,
+        orderType: _sample ? 'sample' : 'normal',
       );
+
+      // 결제 매장 — 결제를 마쳐야 발주가 접수된다
+      if (result.payment case final pay?) {
+        await _payThenFinish(pay);
+        return;
+      }
+      _goToOrder(result.order!.id, order: result.order);
     } catch (e) {
       if (!mounted) return;
       setState(() => _submitting = false);
@@ -87,6 +88,84 @@ class _CartScreenState extends State<CartScreen> {
         ),
       );
     }
+  }
+
+  /// 장바구니를 비우고 발주 상세로 교체 진입.
+  void _goToOrder(int orderId, {OrderModel? order, bool updated = false}) {
+    widget.cart.clear();
+    if (!mounted) return;
+    Navigator.of(context).pushReplacement(
+      MaterialPageRoute(
+        builder: (_) => OrderDetailScreen(
+          repository: widget.repository,
+          orderId: orderId,
+          initial: order,
+          justCreated: !updated,
+          justUpdated: updated,
+        ),
+      ),
+    );
+  }
+
+  /// 결제창(웹뷰) → 닫힌 뒤 서버에 결과를 다시 확인 → 접수됐으면 발주 상세로.
+  Future<void> _payThenFinish(PaymentCheckout pay) async {
+    await Navigator.of(context).push<Map<String, String>>(
+      MaterialPageRoute(
+        builder: (_) => PaymentWebViewScreen(
+          url: pay.checkoutUrl,
+          donePath: pay.donePath,
+          amount: pay.amount,
+        ),
+      ),
+    );
+    if (!mounted) return;
+
+    CheckoutStatus status;
+    try {
+      status = await widget.repository.checkoutStatus(pay.checkoutId);
+    } catch (_) {
+      status = const CheckoutStatus(
+          status: 'unknown',
+          message: '결제 결과를 확인하지 못했습니다. 발주 내역에서 확인해 주세요.');
+    }
+    if (!mounted) return;
+
+    if (status.isAccepted && status.orderId != null) {
+      // 가상계좌 등 — 입금 안내를 먼저 보여준다
+      if (!status.isPaid && (status.message ?? '').isNotEmpty) {
+        await showDialog<void>(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            icon: const Text('🏦', style: TextStyle(fontSize: 28)),
+            title: const Text('결제 접수',
+                style: TextStyle(fontSize: 17, fontWeight: FontWeight.w800)),
+            content: Text(status.message!, style: const TextStyle(fontSize: 14, height: 1.5)),
+            actions: [
+              FilledButton(onPressed: () => Navigator.pop(ctx), child: const Text('확인')),
+            ],
+          ),
+        );
+        if (!mounted) return;
+      }
+      _goToOrder(status.orderId!);
+      return;
+    }
+
+    setState(() => _submitting = false);
+    await showDialog<void>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        icon: const Text('💳', style: TextStyle(fontSize: 28)),
+        title: const Text('결제가 완료되지 않았습니다',
+            style: TextStyle(fontSize: 17, fontWeight: FontWeight.w800)),
+        content: Text(
+            status.message ?? '결제를 완료해야 발주가 접수됩니다. 다시 시도해 주세요.',
+            style: const TextStyle(fontSize: 14, height: 1.5)),
+        actions: [
+          FilledButton(onPressed: () => Navigator.pop(ctx), child: const Text('확인')),
+        ],
+      ),
+    );
   }
 
   @override
